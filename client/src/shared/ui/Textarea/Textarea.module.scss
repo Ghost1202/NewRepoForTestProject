@@ -1,0 +1,40 @@
+.field {
+  display: grid;
+  gap: 6px;
+  font-size: 14px;
+}
+
+.label {
+  font-weight: 600;
+  color: var(--text);
+}
+
+.textarea {
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--outline);
+  padding: 10px 12px;
+  min-height: 120px;
+  background: rgba(255, 255, 255, 0.9);
+  resize: vertical;
+  transition: border 0.15s ease, box-shadow 0.15s ease;
+}
+
+.textarea:focus {
+  outline: none;
+  border-color: rgba(15, 118, 110, 0.6);
+  box-shadow: 0 0 0 3px var(--ring);
+}
+
+.invalid {
+  border-color: rgba(180, 35, 24, 0.6);
+}
+
+.hint {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.error {
+  font-size: 12px;
+  color: var(--danger);
+}

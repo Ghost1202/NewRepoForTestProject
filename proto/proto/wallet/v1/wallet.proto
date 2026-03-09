@@ -1,0 +1,29 @@
+syntax = "proto3";
+
+package wallet.v1;
+
+option go_package = "github.com/turtlepavlo/proto-contract/gen/go/wallet/v1;walletv1";
+
+service WalletService {
+  rpc ChargeWallet (ChargeWalletRequest) returns (ChargeWalletResponse);
+}
+
+message ChargeWalletRequest {
+  string booking_id = 1;
+  int64 user_id = 2;
+  int64 event_id = 3;
+  repeated int64 ticket_ids = 4;
+  int64 amount = 5;
+  string currency = 6;
+}
+
+message ChargeWalletResponse {
+  ChargeStatus status = 1;
+}
+
+enum ChargeStatus {
+  CHARGE_STATUS_UNSPECIFIED = 0;
+  CHARGE_STATUS_SUCCESS = 1;
+  CHARGE_STATUS_TICKET_TAKEN = 2;
+  CHARGE_STATUS_INSUFFICIENT_FUNDS = 3;
+}

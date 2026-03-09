@@ -1,0 +1,538 @@
+basePath: /api/v1
+definitions:
+  internal_transport_http_handler.AddBundleReq:
+    properties:
+      bundles:
+        items:
+          $ref: '#/definitions/internal_transport_http_handler.Bundle'
+        type: array
+      event_id:
+        example: 5501
+        type: integer
+    type: object
+  internal_transport_http_handler.AddBundleResp:
+    properties:
+      bundle_ids:
+        example:
+        - 7
+        items:
+          type: integer
+        type: array
+    type: object
+  internal_transport_http_handler.AddEarlyReq:
+    properties:
+      early:
+        items:
+          $ref: '#/definitions/internal_transport_http_handler.Early'
+        type: array
+      event_id:
+        example: 5501
+        type: integer
+    type: object
+  internal_transport_http_handler.AddEarlyResp:
+    properties:
+      early_ids:
+        example:
+        - 12
+        items:
+          type: integer
+        type: array
+    type: object
+  internal_transport_http_handler.AddPromoReq:
+    properties:
+      event_id:
+        example: 5501
+        type: integer
+      promos:
+        items:
+          $ref: '#/definitions/internal_transport_http_handler.Promo'
+        type: array
+    type: object
+  internal_transport_http_handler.AddPromoResp:
+    properties:
+      promo_ids:
+        example:
+        - 88
+        items:
+          type: integer
+        type: array
+    type: object
+  internal_transport_http_handler.Bundle:
+    properties:
+      buy_count:
+        example: 2
+        type: integer
+      code:
+        example: B2G1
+        type: string
+      get_count:
+        example: 1
+        type: integer
+      sector:
+        example: VIP
+        type: string
+    type: object
+  internal_transport_http_handler.CreateEventReq:
+    properties:
+      bundles:
+        items:
+          $ref: '#/definitions/internal_transport_http_handler.Bundle'
+        type: array
+      constructor:
+        items:
+          $ref: '#/definitions/internal_transport_http_handler.TicketConstructor'
+        type: array
+      date_start:
+        example: "2026-10-05T19:30:00Z"
+        type: string
+      early:
+        items:
+          $ref: '#/definitions/internal_transport_http_handler.Early'
+        type: array
+      max_price_cof:
+        example: 2.5
+        type: number
+      min_price_cof:
+        example: 1
+        type: number
+      name:
+        example: Grand Rock Concert
+        type: string
+      post_date:
+        example: "2026-09-01T10:00:00Z"
+        type: string
+      promos:
+        items:
+          $ref: '#/definitions/internal_transport_http_handler.Promo'
+        type: array
+      sale_start_date:
+        example: "2026-09-05T09:00:00Z"
+        type: string
+      venue_id:
+        example: 33
+        type: integer
+    type: object
+  internal_transport_http_handler.CreateEventResp:
+    properties:
+      event_id:
+        example: 5501
+        type: integer
+    type: object
+  internal_transport_http_handler.Early:
+    properties:
+      code:
+        example: EARLYBIRD
+        type: string
+      sector:
+        example: VIP
+        type: string
+      type:
+        example: percent
+        type: string
+      valid_until:
+        example: "2026-09-10T09:00:00Z"
+        type: string
+      value:
+        example: 15
+        type: number
+    type: object
+  internal_transport_http_handler.GetBundleReq:
+    properties:
+      event_id:
+        example: 5501
+        type: integer
+      limit:
+        example: 10
+        type: integer
+      offset:
+        example: 0
+        type: integer
+    type: object
+  internal_transport_http_handler.GetBundleRes:
+    properties:
+      bundles:
+        items:
+          $ref: '#/definitions/internal_transport_http_handler.Bundle'
+        type: array
+    type: object
+  internal_transport_http_handler.GetEarlyReq:
+    properties:
+      event_id:
+        example: 5501
+        type: integer
+      limit:
+        example: 10
+        type: integer
+      offset:
+        example: 0
+        type: integer
+    type: object
+  internal_transport_http_handler.GetEarlyRes:
+    properties:
+      early:
+        items:
+          $ref: '#/definitions/internal_transport_http_handler.Early'
+        type: array
+    type: object
+  internal_transport_http_handler.GetPromoReq:
+    properties:
+      event_id:
+        example: 5501
+        type: integer
+      limit:
+        example: 10
+        type: integer
+      offset:
+        example: 0
+        type: integer
+    type: object
+  internal_transport_http_handler.GetPromoRes:
+    properties:
+      promos:
+        items:
+          $ref: '#/definitions/internal_transport_http_handler.Promo'
+        type: array
+    type: object
+  internal_transport_http_handler.Promo:
+    properties:
+      code:
+        example: PROMO10
+        type: string
+      sector:
+        example: VIP
+        type: string
+      type:
+        example: percent
+        type: string
+      value:
+        example: 10
+        type: number
+    type: object
+  internal_transport_http_handler.TicketConstructor:
+    properties:
+      name:
+        example: VIP
+        type: string
+      price:
+        example: 5000
+        type: integer
+      rows_count:
+        example: 3
+        type: integer
+      seats_per_row:
+        example: 12
+        type: integer
+      type:
+        example: vip
+        type: string
+    type: object
+  internal_transport_http_handler.UpdateEventReq:
+    properties:
+      date_start:
+        example: "2026-10-06T19:30:00Z"
+        type: string
+      event_id:
+        example: 5501
+        type: integer
+      max_price_cof:
+        example: 3
+        type: number
+      min_price_cof:
+        example: 1.2
+        type: number
+      name:
+        example: Grand Rock Concert - Rescheduled
+        type: string
+    type: object
+host: localhost:6660
+info:
+  contact: {}
+  description: API for managing events, sectors, and ticket configurations.
+  title: Event Service API
+  version: "1.0"
+paths:
+  /events:
+    post:
+      consumes:
+      - application/json
+      description: Creates an event and generates tickets for it using "constructor"
+        and adds promos.
+      parameters:
+      - description: Event creation data
+        in: body
+        name: event
+        required: true
+        schema:
+          $ref: '#/definitions/internal_transport_http_handler.CreateEventReq'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/internal_transport_http_handler.CreateEventResp'
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      security:
+      - ApiKeyAuth: []
+      summary: Create a new event with tickets
+      tags:
+      - events
+    put:
+      consumes:
+      - application/json
+      description: Updates an existing event. Restricted to users with the 'admin'
+        role.
+      parameters:
+      - description: Event update data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_transport_http_handler.UpdateEventReq'
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "401":
+          description: Unauthorized
+          schema:
+            type: string
+      security:
+      - ApiKeyAuth: []
+      summary: Update event details
+      tags:
+      - events
+  /promos/bundle:
+    post:
+      consumes:
+      - application/json
+      description: Adds bundle promo codes linked to an event.
+      parameters:
+      - description: Bundle promo data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_transport_http_handler.AddBundleReq'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/internal_transport_http_handler.AddBundleResp'
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "401":
+          description: Unauthorized
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      security:
+      - ApiKeyAuth: []
+      summary: Add bundle promo to an existing event
+      tags:
+      - promos
+  /promos/bundle/search:
+    post:
+      consumes:
+      - application/json
+      description: Get list of bundle promos filtered by event_id with pagination.
+      parameters:
+      - description: Filter and Pagination
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_transport_http_handler.GetBundleReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_transport_http_handler.GetBundleRes'
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "401":
+          description: Unauthorized
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      security:
+      - ApiKeyAuth: []
+      summary: Get bundle promos
+      tags:
+      - promos
+  /promos/early:
+    post:
+      consumes:
+      - application/json
+      description: Adds early promo codes linked to an event.
+      parameters:
+      - description: Early promo data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_transport_http_handler.AddEarlyReq'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/internal_transport_http_handler.AddEarlyResp'
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "401":
+          description: Unauthorized
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      security:
+      - ApiKeyAuth: []
+      summary: Add early promo to an existing event
+      tags:
+      - promos
+  /promos/early/search:
+    post:
+      consumes:
+      - application/json
+      description: Get list of early promos filtered by event_id with pagination.
+      parameters:
+      - description: Filter and Pagination
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_transport_http_handler.GetEarlyReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_transport_http_handler.GetEarlyRes'
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "401":
+          description: Unauthorized
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      security:
+      - ApiKeyAuth: []
+      summary: Get early promos
+      tags:
+      - promos
+  /promos/promo:
+    post:
+      consumes:
+      - application/json
+      description: Adds promo codes linked to an event.
+      parameters:
+      - description: Promo data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_transport_http_handler.AddPromoReq'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/internal_transport_http_handler.AddPromoResp'
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "401":
+          description: Unauthorized
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      security:
+      - ApiKeyAuth: []
+      summary: Add promo to an existing event
+      tags:
+      - promos
+  /promos/promo/search:
+    post:
+      consumes:
+      - application/json
+      description: Get list of promos filtered by event_id with pagination.
+      parameters:
+      - description: Filter and Pagination
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_transport_http_handler.GetPromoReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_transport_http_handler.GetPromoRes'
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "401":
+          description: Unauthorized
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      security:
+      - ApiKeyAuth: []
+      summary: Get promos
+      tags:
+      - promos
+securityDefinitions:
+  ApiKeyAuth:
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"

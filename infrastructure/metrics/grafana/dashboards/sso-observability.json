@@ -1,0 +1,190 @@
+{
+  "title": "SSO Observability (OTel)",
+  "timezone": "browser",
+  "schemaVersion": 40,
+  "version": 3,
+  "refresh": "10s",
+  "time": { "from": "now-15m", "to": "now" },
+  "panels": [
+    {
+      "type": "stat",
+      "title": "Collector UP (8888/8889)",
+      "datasource": { "type": "prometheus", "uid": "prom" },
+      "targets": [
+        { "refId": "A", "expr": "up{instance=~\"otel-collector:8888|otel-collector:8889\"}" }
+      ],
+      "gridPos": { "x": 0, "y": 0, "w": 4, "h": 4 }
+    },
+    {
+      "type": "stat",
+      "title": "Collector: total accepted spans",
+      "datasource": { "type": "prometheus", "uid": "prom" },
+      "targets": [
+        { "refId": "A", "expr": "sum(increase(otelcol_receiver_accepted_spans_total[$__range]))" }
+      ],
+      "gridPos": { "x": 4, "y": 0, "w": 4, "h": 4 }
+    },
+    {
+      "type": "stat",
+      "title": "Collector: total sent spans",
+      "datasource": { "type": "prometheus", "uid": "prom" },
+      "targets": [
+        { "refId": "A", "expr": "sum(increase(otelcol_exporter_sent_spans_total[$__range]))" }
+      ],
+      "gridPos": { "x": 8, "y": 0, "w": 4, "h": 4 }
+    },
+    {
+      "type": "stat",
+      "title": "Collector: total failed spans",
+      "datasource": { "type": "prometheus", "uid": "prom" },
+      "targets": [
+        { "refId": "A", "expr": "sum(increase(otelcol_exporter_send_failed_spans_total[$__range]))" }
+      ],
+      "gridPos": { "x": 12, "y": 0, "w": 4, "h": 4 }
+    },
+    {
+      "type": "stat",
+      "title": "Collector: total failed logs",
+      "datasource": { "type": "prometheus", "uid": "prom" },
+      "targets": [
+        { "refId": "A", "expr": "sum(increase(otelcol_exporter_send_failed_log_records_total[$__range]))" }
+      ],
+      "gridPos": { "x": 16, "y": 0, "w": 4, "h": 4 }
+    },
+
+    {
+      "type": "timeseries",
+      "title": "Collector: accepted spans (rate)",
+      "datasource": { "type": "prometheus", "uid": "prom" },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(rate(otelcol_receiver_accepted_spans_total[1m]))",
+          "legendFormat": "accepted_spans/s"
+        }
+      ],
+      "gridPos": { "x": 0, "y": 4, "w": 12, "h": 8 }
+    },
+    {
+      "type": "timeseries",
+      "title": "Collector: sent spans (rate)",
+      "datasource": { "type": "prometheus", "uid": "prom" },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(rate(otelcol_exporter_sent_spans_total[1m]))",
+          "legendFormat": "sent_spans/s"
+        }
+      ],
+      "gridPos": { "x": 12, "y": 4, "w": 12, "h": 8 }
+    },
+    {
+      "type": "timeseries",
+      "title": "Collector: failed spans/logs (rate)",
+      "datasource": { "type": "prometheus", "uid": "prom" },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(rate(otelcol_exporter_send_failed_spans_total[5m]))",
+          "legendFormat": "failed_spans/s"
+        },
+        {
+          "refId": "B",
+          "expr": "sum(rate(otelcol_exporter_send_failed_log_records_total[5m]))",
+          "legendFormat": "failed_logs/s"
+        }
+      ],
+      "gridPos": { "x": 0, "y": 12, "w": 24, "h": 8 }
+    },
+
+    {
+      "type": "stat",
+      "title": "SSO (from traces): total calls (all services)",
+      "datasource": { "type": "prometheus", "uid": "prom" },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(increase(otel_traces_spanmetrics_calls_total[$__range]))"
+        }
+      ],
+      "gridPos": { "x": 0, "y": 20, "w": 6, "h": 4 }
+    },
+    {
+      "type": "stat",
+      "title": "SSO (from traces): total 5xx",
+      "datasource": { "type": "prometheus", "uid": "prom" },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(increase(otel_traces_spanmetrics_calls_total{http_status_code=~\"5..\"}[$__range]))"
+        }
+      ],
+      "gridPos": { "x": 6, "y": 20, "w": 6, "h": 4 }
+    },
+    {
+      "type": "stat",
+      "title": "SSO (from traces): 5xx % за період",
+      "datasource": { "type": "prometheus", "uid": "prom" },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "100 * sum(increase(otel_traces_spanmetrics_calls_total{http_status_code=~\"5..\"}[$__range])) / sum(increase(otel_traces_spanmetrics_calls_total[$__range]))"
+        }
+      ],
+      "gridPos": { "x": 12, "y": 20, "w": 6, "h": 4 }
+    },
+
+    {
+      "type": "timeseries",
+      "title": "SSO (from traces): RPS (all services)",
+      "datasource": { "type": "prometheus", "uid": "prom" },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(rate(otel_traces_spanmetrics_calls_total[1m]))",
+          "legendFormat": "rps"
+        }
+      ],
+      "gridPos": { "x": 0, "y": 24, "w": 12, "h": 8 }
+    },
+    {
+      "type": "timeseries",
+      "title": "SSO (from traces): p95 latency (s) (all services)",
+      "datasource": { "type": "prometheus", "uid": "prom" },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "histogram_quantile(0.95, sum by (le) (rate(otel_traces_spanmetrics_latency_bucket[5m])))",
+          "legendFormat": "p95"
+        }
+      ],
+      "gridPos": { "x": 12, "y": 24, "w": 12, "h": 8 }
+    },
+    {
+      "type": "timeseries",
+      "title": "SSO (from traces): 5xx rate (if http_status_code exists)",
+      "datasource": { "type": "prometheus", "uid": "prom" },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(rate(otel_traces_spanmetrics_calls_total{http_status_code=~\"5..\"}[5m]))",
+          "legendFormat": "5xx/s"
+        }
+      ],
+      "gridPos": { "x": 0, "y": 32, "w": 12, "h": 8 }
+    },
+    {
+      "type": "timeseries",
+      "title": "SSO (from traces): top routes (RPS) (if http_route exists)",
+      "datasource": { "type": "prometheus", "uid": "prom" },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "topk(10, sum(rate(otel_traces_spanmetrics_calls_total[5m])) by (http_route))",
+          "legendFormat": "{{http_route}}"
+        }
+      ],
+      "gridPos": { "x": 12, "y": 32, "w": 12, "h": 8 }
+    }
+  ]
+}

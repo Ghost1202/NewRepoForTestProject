@@ -1,0 +1,24 @@
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.accent {
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+}
+
+.muted {
+  background: rgba(31, 29, 26, 0.08);
+  color: var(--muted);
+}
+
+.warning {
+  background: rgba(194, 65, 12, 0.15);
+  color: var(--warn);
+}

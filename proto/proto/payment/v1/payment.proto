@@ -1,0 +1,61 @@
+syntax = "proto3";
+
+package payment.v1;
+
+option go_package = "github.com/turtlepavlo/proto-contract/gen/go/payment/v1;paymentv1";
+
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/duration.proto";
+import "google/protobuf/empty.proto";
+
+service PaymentService {
+  rpc CreatePayment (CreatePaymentRequest) returns (CreatePaymentResponse);
+  rpc TopupWallet (TopupWalletRequest) returns (TopupWalletResponse);
+  rpc CreateRefund (CreateRefundRequest) returns (google.protobuf.Empty);
+  rpc Waitlist (WaitlistRequest) returns (google.protobuf.Empty);
+}
+
+message CreatePaymentRequest {
+  string order_id = 1;
+  int64 user_id = 2;
+  string user_email = 3;
+  int64 amount = 4;
+  string currency = 5;
+  string description = 6;
+  google.protobuf.Duration token_ttl = 7;
+  repeated int64 ticket_ids = 8;
+}
+
+message TopupWalletRequest {
+  string order_id = 1;
+  int64 user_id = 2;
+  int64 wallet_id = 3;
+  int64 amount = 4;
+  string currency = 5;
+  google.protobuf.Duration token_ttl = 6;
+}
+
+message CreatePaymentResponse {
+  string payment_url = 1;
+  google.protobuf.Timestamp expires_at = 2;
+}
+
+message TopupWalletResponse {
+  string payment_url = 1;
+  google.protobuf.Timestamp expires_at = 2;
+}
+
+message CreateRefundRequest {
+  int64 user_id = 1;
+  int64 event_id = 2;
+  int64 ticket_id = 3;
+  int64 amount = 4;
+  string description = 5;
+  google.protobuf.Duration token_ttl = 6;
+}
+
+message WaitlistRequest {
+  int64 user_id = 1;
+  int64 event_id = 2;
+  string user_email = 3;
+}

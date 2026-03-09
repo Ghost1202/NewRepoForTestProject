@@ -1,0 +1,94 @@
+
+x-searching-common-env: &searching-common-env
+  OTEL_EXPORTER_OTLP_ENDPOINT: otel-collector:4317
+  OTEL_EXPORTER_OTLP_PROTOCOL: grpc
+  OTEL_SERVICE_NAME: event-searching
+
+services:
+  searching-redis:
+    image: redis:7.2-alpine
+    container_name: searching_redis
+    restart: unless-stopped
+    volumes:
+      - redis_data:/data
+    networks:
+      - searching_net
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  searching-postgres:
+    image: postgres:16-alpine
+    container_name: searching_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: searching_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./db/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    networks:
+      - searching_net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d searching_db"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  searching-server:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      secrets:
+        - github_token
+    container_name: searching_server
+    restart: unless-stopped
+    ports:
+      - "4541:4541"
+    depends_on:
+      searching-redis:
+        condition: service_healthy
+      searching-postgres:
+        condition: service_healthy
+    env_file:
+      - .env
+    environment:
+      <<: *searching-common-env
+      HOST_REDIS: searching_redis
+      PORT_REDIS: 6379
+      HOST_ELASTIC: elasticsearch
+      PORT_ELASTIC: 9200
+      KAFKA_HOST: kafka
+      KAFKA_PORT: 29092
+
+      EVENT_SEARCHING_DB_HOST: searching_postgres
+      EVENT_SEARCHING_DB_PORT: 5432
+      EVENT_SEARCHING_DB_USER: postgres
+      EVENT_SEARCHING_DB_PASSWORD: postgres
+      EVENT_SEARCHING_DB_NAME: searching_db
+      EVENT_SEARCHING_DB_SSLMODE: disable
+    networks:
+      - searching_net
+      - infra_shared
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+networks:
+  searching_net:
+    driver: bridge
+  infra_shared:
+    external: true
+    name: infra_shared
+
+volumes:
+  redis_data: {}
+  postgres_data: {}
+
+secrets:
+  github_token:
+    environment: SEARCH

@@ -1,0 +1,439 @@
+definitions:
+  internal_transport_http_handler.AuthResp:
+    properties:
+      role:
+        example: user
+        type: string
+      user_id:
+        example: 1
+        type: integer
+    type: object
+  internal_transport_http_handler.ConfirmOTPByPhoneReq:
+    properties:
+      code:
+        example: 1234
+        type: integer
+      phone:
+        example: "+380501234567"
+        type: string
+    type: object
+  internal_transport_http_handler.CreateUserReq:
+    properties:
+      email:
+        example: email@example.com
+        type: string
+      last_name:
+        example: lastName
+        type: string
+      login:
+        example: login
+        type: string
+      name:
+        example: name
+        type: string
+      password:
+        example: password
+        type: string
+    type: object
+  internal_transport_http_handler.CreateUserResp:
+    properties:
+      id:
+        example: 1
+        type: integer
+    type: object
+  internal_transport_http_handler.LoginByPhoneReq:
+    properties:
+      password:
+        example: password
+        type: string
+      phone:
+        example: "+380501234567"
+        type: string
+    type: object
+  internal_transport_http_handler.LoginReq:
+    properties:
+      identifier:
+        example: email@example.com
+        type: string
+      is_email:
+        example: true
+        type: boolean
+      password:
+        example: password
+        type: string
+    type: object
+  internal_transport_http_handler.LoginResp:
+    properties:
+      access_token:
+        example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+        type: string
+      login:
+        example: login
+        type: string
+      role:
+        example: user
+        type: string
+      user_id:
+        example: 1
+        type: integer
+    type: object
+  internal_transport_http_handler.ResetEmailConfirmReq:
+    properties:
+      code:
+        example: 1234
+        type: integer
+      email:
+        example: email@example.com
+        type: string
+      new_password:
+        example: newStrongPassword
+        type: string
+    type: object
+  internal_transport_http_handler.ResetEmailReq:
+    properties:
+      email:
+        example: email@example.com
+        type: string
+    type: object
+  internal_transport_http_handler.ResetPhoneConfirmReq:
+    properties:
+      code:
+        example: 1234
+        type: integer
+      new_password:
+        example: newStrongPassword
+        type: string
+      phone:
+        example: "+380501234567"
+        type: string
+    type: object
+  internal_transport_http_handler.ResetPhoneReq:
+    properties:
+      phone:
+        example: "+380501234567"
+        type: string
+    type: object
+  internal_transport_http_handler.SendOTPByPhoneReq:
+    properties:
+      phone:
+        example: "+380501234567"
+        type: string
+    type: object
+info:
+  contact: {}
+paths:
+  /users/auth:
+    post:
+      consumes:
+      - application/json
+      description: Validates identifier/password and returns JWT access token.
+      parameters:
+      - description: Credentials
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/internal_transport_http_handler.LoginReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_transport_http_handler.LoginResp'
+        "400":
+          description: Bad Request
+        "401":
+          description: Unauthorized
+        "500":
+          description: Internal Server Error
+      summary: Authorization by login/email (get JWT)
+      tags:
+      - auth
+  /users/auth/phone:
+    post:
+      consumes:
+      - application/json
+      description: Validates phone/password and returns JWT access token.
+      parameters:
+      - description: Phone credentials
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/internal_transport_http_handler.LoginByPhoneReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_transport_http_handler.LoginResp'
+        "400":
+          description: Bad Request
+        "401":
+          description: Unauthorized
+        "500":
+          description: Internal Server Error
+      summary: Authorization by phone (get JWT)
+      tags:
+      - auth
+  /users/google/callback:
+    get:
+      description: |-
+        Handles Google OAuth callback and returns JWT access token.
+        If FRONTEND_URL is set, sets HttpOnly cookie "auth_token" and redirects to FRONTEND_URL/auth/callback.
+      parameters:
+      - description: Google auth code
+        in: query
+        name: code
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: JSON response when FRONTEND_URL is empty
+          schema:
+            $ref: '#/definitions/internal_transport_http_handler.LoginResp'
+        "302":
+          description: Redirect to frontend callback when FRONTEND_URL is set
+          headers:
+            Set-Cookie:
+              description: auth_token=<JWT>; HttpOnly
+              type: string
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+        "401":
+          description: Unauthorized
+        "500":
+          description: Internal Server Error
+      summary: Google OAuth callback (get JWT)
+      tags:
+      - users
+  /users/google/login:
+    get:
+      description: Redirects user to Google OAuth consent screen
+      responses:
+        "307":
+          description: Redirect to Google
+          schema:
+            type: string
+      summary: Google Login Redirect
+      tags:
+      - users
+  /users/login:
+    get:
+      description: Protected endpoint. Returns user data extracted from the Bearer
+        token.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_transport_http_handler.AuthResp'
+        "400":
+          description: Bad Request
+        "401":
+          description: Unauthorized
+        "500":
+          description: Internal Server Error
+      security:
+      - BearerAuth: []
+      summary: JWT verification / user info
+      tags:
+      - users
+  /users/otp/phone/confirm:
+    post:
+      consumes:
+      - application/json
+      description: Confirms OTP and returns JWT access token.
+      parameters:
+      - description: OTP confirm
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/internal_transport_http_handler.ConfirmOTPByPhoneReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_transport_http_handler.LoginResp'
+        "400":
+          description: Bad Request
+        "401":
+          description: Unauthorized
+        "404":
+          description: Not Found
+        "500":
+          description: Internal Server Error
+      summary: Confirm OTP by phone (get JWT)
+      tags:
+      - auth
+  /users/otp/phone/send:
+    post:
+      consumes:
+      - application/json
+      description: Sends OTP code to phone number.
+      parameters:
+      - description: Phone
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/internal_transport_http_handler.SendOTPByPhoneReq'
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+        "500":
+          description: Internal Server Error
+      summary: Send OTP to phone
+      tags:
+      - auth
+  /users/register:
+    post:
+      consumes:
+      - application/json
+      description: 'Creates a user. Default role: user.'
+      parameters:
+      - description: User data
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/internal_transport_http_handler.CreateUserReq'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/internal_transport_http_handler.CreateUserResp'
+        "400":
+          description: Bad Request
+        "401":
+          description: Unauthorized
+        "409":
+          description: Conflict
+        "500":
+          description: Internal Server Error
+      summary: Register a new user
+      tags:
+      - auth
+  /users/reset/email:
+    post:
+      consumes:
+      - application/json
+      description: Sends OTP to email for password reset.
+      parameters:
+      - description: Email
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/internal_transport_http_handler.ResetEmailReq'
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+        "500":
+          description: Internal Server Error
+      summary: Reset password by email (send OTP)
+      tags:
+      - auth
+  /users/reset/email/confirm:
+    post:
+      consumes:
+      - application/json
+      description: Confirms OTP and sets new password, returns JWT.
+      parameters:
+      - description: Confirm reset
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/internal_transport_http_handler.ResetEmailConfirmReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_transport_http_handler.LoginResp'
+        "400":
+          description: Bad Request
+        "401":
+          description: Unauthorized
+        "404":
+          description: Not Found
+        "500":
+          description: Internal Server Error
+      summary: Confirm email reset (OTP + new password)
+      tags:
+      - auth
+  /users/reset/phone:
+    post:
+      consumes:
+      - application/json
+      description: Sends OTP to phone for password reset.
+      parameters:
+      - description: Phone
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/internal_transport_http_handler.ResetPhoneReq'
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+        "500":
+          description: Internal Server Error
+      summary: Reset password by phone (send OTP)
+      tags:
+      - auth
+  /users/reset/phone/confirm:
+    post:
+      consumes:
+      - application/json
+      description: Confirms OTP and sets new password, returns JWT.
+      parameters:
+      - description: Confirm reset
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/internal_transport_http_handler.ResetPhoneConfirmReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_transport_http_handler.LoginResp'
+        "400":
+          description: Bad Request
+        "401":
+          description: Unauthorized
+        "404":
+          description: Not Found
+        "500":
+          description: Internal Server Error
+      summary: Confirm phone reset (OTP + new password)
+      tags:
+      - auth
+swagger: "2.0"

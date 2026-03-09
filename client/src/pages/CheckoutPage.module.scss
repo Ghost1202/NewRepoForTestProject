@@ -1,0 +1,37 @@
+.layout {
+  display: grid;
+  grid-template-columns: 0.9fr 1.1fr;
+  gap: 24px;
+}
+
+.summary {
+  background: linear-gradient(160deg, rgba(255, 255, 255, 0.95), rgba(251, 247, 241, 0.8));
+  border: 1px solid rgba(31, 29, 26, 0.05);
+}
+
+.form {
+  display: grid;
+  gap: 16px;
+  margin-top: 12px;
+}
+
+.actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.error {
+  color: var(--danger);
+  font-size: 13px;
+}
+
+@media (max-width: 900px) {
+  .layout {
+    grid-template-columns: 1fr;
+  }
+
+  .actions {
+    grid-template-columns: 1fr;
+  }
+}

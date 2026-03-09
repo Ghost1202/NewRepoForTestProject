@@ -1,0 +1,23 @@
+global:
+  resolve_timeout: 5m
+
+route:
+  group_by: ['alertname']
+  group_wait: 10s
+  group_interval: 1m
+  repeat_interval: 10s
+  receiver: 'telegram-bot'
+
+receivers:
+- name: 'telegram-bot'
+  telegram_configs:
+  - bot_token_file: /run/secrets/telegram_bot_token
+    chat_id: -5162770013
+    parse_mode: 'HTML'
+    message: |
+      <b>SSO Service Alert</b>
+
+      <b>Reason:</b> {{ .CommonAnnotations.summary }}
+      <b>Current Value:</b> {{ .CommonAnnotations.value }} RPS
+
+      <i>{{ .CommonAnnotations.description }}</i>

@@ -1,0 +1,49 @@
+.ticketGrid {
+  margin-top: 16px;
+}
+
+.walletGrid {
+  margin-top: 16px;
+}
+
+.walletCard {
+  display: grid;
+  gap: 6px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(240, 245, 244, 0.92));
+}
+
+.walletLabel {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.walletValue {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 600;
+}
+
+.ticketCard {
+  display: grid;
+  gap: 6px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.95), rgba(246, 239, 231, 0.9));
+}
+
+.forms {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 20px;
+}
+
+.form {
+  display: grid;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+@media (max-width: 1100px) {
+  .forms {
+    grid-template-columns: 1fr;
+  }
+}

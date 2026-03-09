@@ -1,0 +1,95 @@
+services:
+  alertmanager:
+    image: prom/alertmanager:v0.30.0
+    container_name: metrics_alertmanager
+    command:
+      - --config.file=/etc/alertmanager/alertmanager.yml
+      - --log.level=debug
+    volumes:
+      - ./alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
+      - ./secrets/telegram_bot_token:/run/secrets/telegram_bot_token:ro
+    ports:
+      - "9093:9093"
+    networks:
+      - default
+
+  prometheus:
+    image: prom/prometheus:v3.8.0
+    container_name: metrics_prometheus
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./prometheus/rules.yml:/etc/prometheus/rules.yml:ro
+    ports:
+      - "9091:9090"
+    depends_on:
+      - alertmanager
+    networks:
+      - default
+
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:0.141.0
+    command: ["--config=/etc/otelcol/config.yml"]
+    volumes:
+      - ./otelcol/config.yml:/etc/otelcol/config.yml:ro
+    ports:
+      - "4317:4317"
+      - "4318:4318"
+      - "8888:8888"
+      - "8889:8889"
+      - "13133:13133"
+    depends_on:
+      - tempo
+      - loki
+    networks:
+      - default
+
+  tempo:
+    image: grafana/tempo:2.9.0
+    command: ["-config.file=/etc/tempo/tempo.yml"]
+    volumes:
+      - ./tempo/tempo.yml:/etc/tempo/tempo.yml:ro
+      - tempo-data:/var/tempo
+    ports:
+      - "3200:3200"
+    networks:
+      - default
+
+  loki:
+    image: grafana/loki:3.6.2
+    command: ["-config.file=/etc/loki/loki.yml"]
+    volumes:
+      - ./loki/loki.yml:/etc/loki/loki.yml:ro
+      - loki-data:/loki
+    ports:
+      - "3100:3100"
+    networks:
+      - default
+
+  grafana:
+    image: grafana/grafana:12.3.0
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: admin
+      GF_PLUGINS_DISABLE_PLUGINS: "grafana-lokiexplore-app,grafana-metricsdrilldown-app,grafana-exploretraces-app,grafana-traces-app,grafana-pyroscope-app"
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./grafana/dashboards:/etc/grafana/dashboards:ro
+    ports:
+      - "3000:3000"
+    depends_on:
+      - prometheus
+      - loki
+      - tempo
+    networks:
+      - default
+
+networks:
+  default:
+    external: true
+    name: infra_shared
+
+volumes:
+  loki-data:
+  tempo-data:

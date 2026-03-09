@@ -1,0 +1,19 @@
+syntax = "proto3";
+
+package analytics.event.v1;
+
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/turtlepavlo/proto-contract/gen/go/analytics/event/v1;eventv1";
+
+message RegisterEvent {
+  int64 user_id = 1;
+  string email = 2;
+  google.protobuf.Timestamp created_at = 3;
+}
+
+message LoginEvent {
+  int64 user_id = 1;
+  string type = 2;
+  google.protobuf.Timestamp created_at = 3;
+}

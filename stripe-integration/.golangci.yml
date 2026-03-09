@@ -1,0 +1,77 @@
+run:
+  timeout: 5m
+  tests: true
+  issues-exit-code: 1
+  go: '1.24.11'
+
+linters:
+  disable-all: true
+  enable:
+    - errcheck
+    - gosimple
+    - govet
+    - ineffassign
+    - staticcheck
+    - typecheck
+    - unused
+    - revive
+    - gocritic
+    - goconst
+    - unconvert
+    - unparam
+    - gosec
+    - bodyclose
+    - noctx
+    - rowserrcheck
+    - sqlclosecheck
+    - whitespace
+    - gofumpt
+
+linters-settings:
+  govet:
+    enable-all: true
+    disable:
+      - fieldalignment
+      - shadow
+  goconst:
+    min-len: 3
+    min-occurrences: 3
+  revive:
+    rules:
+      - name: exported
+        severity: warning
+        arguments:
+          - "checkPrivateReceivers"
+      - name: package-comments
+        disabled: true
+  gocritic:
+    enabled-tags:
+      - diagnostic
+      - experimental
+      - opinionated
+      - performance
+      - style
+    disabled-checks:
+      - whyNoLint
+      - wrapperFunc
+      - hugeParam
+
+issues:
+  exclude-dirs:
+    - bin
+    - vendor
+    - var
+    - tmp
+    - docs
+  exclude-rules:
+    - path: _test\.go
+      linters:
+        - goconst
+        - gosec
+        - bodyclose
+  exclude:
+    - G104
+
+output:
+  formats:
+    - format: colored-line-number

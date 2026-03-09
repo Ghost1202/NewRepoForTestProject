@@ -1,0 +1,12 @@
+.card {
+  background: var(--surface);
+  border-radius: var(--radius-md);
+  padding: 20px;
+  box-shadow: var(--shadow-card);
+  border: 1px solid rgba(31, 29, 26, 0.06);
+  backdrop-filter: blur(6px);
+}
+
+.muted {
+  background: linear-gradient(180deg, var(--surface-alt), #f6efe7);
+}

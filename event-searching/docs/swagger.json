@@ -1,0 +1,224 @@
+{
+    "swagger": "2.0",
+    "info": {
+        "description": "API service for searching and filtering events.",
+        "title": "Event Searching Service API",
+        "termsOfService": "http://swagger.io/terms/",
+        "contact": {
+            "name": "API Support",
+            "email": "support@turtlepavlo.com"
+        },
+        "version": "1.0"
+    },
+    "host": "localhost:4541",
+    "basePath": "/api/v1",
+    "paths": {
+        "/events": {
+            "get": {
+                "description": "Get a list of popular events from Redis cache (Hot Data). Ideal for feeds.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "events"
+                ],
+                "summary": "Get popular events",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Max records to return",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Number of records to skip",
+                        "name": "offset",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "List of popular events",
+                        "schema": {
+                            "$ref": "#/definitions/handler.GetEventsResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/events/search": {
+            "get": {
+                "description": "Full-text search for events using ElasticSearch.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "events"
+                ],
+                "summary": "Search events",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Search text (name, description)",
+                        "name": "query",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Filter by performer ID",
+                        "name": "performer_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Filter by venue ID",
+                        "name": "venue_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "Start date (RFC3339)",
+                        "name": "date_from",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "End date (RFC3339)",
+                        "name": "date_to",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Max records to return",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Number of records to skip",
+                        "name": "offset",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Search results",
+                        "schema": {
+                            "$ref": "#/definitions/handler.GetEventsFilterResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "handler.EventResponse": {
+            "type": "object",
+            "properties": {
+                "date_sale_start": {
+                    "type": "string",
+                    "example": "2026-01-01T10:00:00Z"
+                },
+                "date_start": {
+                    "type": "string",
+                    "example": "2026-05-20T19:00:00Z"
+                },
+                "id": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "info_body": {
+                    "type": "string",
+                    "example": "Doors open at 18:00"
+                },
+                "info_header": {
+                    "type": "string",
+                    "example": "Important Info"
+                },
+                "is_sold_out": {
+                    "type": "boolean",
+                    "example": false
+                },
+                "name": {
+                    "type": "string",
+                    "example": "Grand Concert"
+                },
+                "performer_id": {
+                    "type": "integer",
+                    "example": 101
+                },
+                "popularity": {
+                    "type": "integer",
+                    "example": 150
+                },
+                "venue_id": {
+                    "type": "integer",
+                    "example": 202
+                }
+            }
+        },
+        "handler.GetEventsFilterResponse": {
+            "type": "object",
+            "properties": {
+                "count": {
+                    "type": "integer",
+                    "example": 5
+                },
+                "events": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/handler.EventResponse"
+                    }
+                }
+            }
+        },
+        "handler.GetEventsResponse": {
+            "type": "object",
+            "properties": {
+                "count": {
+                    "type": "integer",
+                    "example": 100
+                },
+                "events": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/handler.EventResponse"
+                    }
+                }
+            }
+        }
+    }
+}

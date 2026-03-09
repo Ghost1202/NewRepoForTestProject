@@ -1,0 +1,130 @@
+definitions:
+  internal_transport_http_handler.TicketResponse:
+    properties:
+      event_id:
+        example: 1024
+        type: integer
+      id:
+        example: 5501
+        type: integer
+      price:
+        example: 15000
+        type: integer
+      row_no:
+        example: 12
+        type: integer
+      seat_no:
+        example: 42
+        type: integer
+      sector_name:
+        example: Platinum A
+        type: string
+      status:
+        example: created
+        type: string
+      venue_id:
+        example: 202
+        type: integer
+    type: object
+  internal_transport_http_handler.UserTicketsResponse:
+    properties:
+      tickets:
+        items:
+          $ref: '#/definitions/internal_transport_http_handler.TicketResponse'
+        type: array
+    type: object
+info:
+  contact: {}
+paths:
+  /api/v1/bookings/refund:
+    post:
+      consumes:
+      - application/json
+      description: Starts refund flow and returns refund URL.
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - BearerAuth: []
+      summary: Refund a booked ticket
+      tags:
+      - bookings
+  /bookings:
+    post:
+      consumes:
+      - application/json
+      description: Reserves tickets in Redis, applies one discount type, calls Payment
+        Service via gRPC, and returns Payment URL.
+      produces:
+      - application/json
+      responses: {}
+      summary: Book tickets
+      tags:
+      - bookings
+  /tickets:
+    get:
+      consumes:
+      - application/json
+      description: Get a list of tickets for a specific event from the Slave DB.
+      produces:
+      - application/json
+      responses: {}
+      summary: Get event tickets
+      tags:
+      - tickets
+  /tickets/discounts:
+    get:
+      consumes:
+      - application/json
+      description: Get early and bundle discounts for a specific event.
+      produces:
+      - application/json
+      responses: {}
+      summary: Get event discount
+      tags:
+      - discounts
+  /user/tickets:
+    get:
+      description: Returns all tickets owned by current user.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_transport_http_handler.UserTicketsResponse'
+      summary: Get user tickets
+      tags:
+      - tickets
+  /user/tickets/transfer:
+    post:
+      consumes:
+      - application/json
+      description: Publishes ticket transfer request.
+      responses:
+        "200":
+          description: OK
+      summary: Ticket transfer
+      tags:
+      - tickets
+  /user/waitlist:
+    post:
+      consumes:
+      - application/json
+      description: Adds the current user to the waitlist. User must provide email
+        for notifications.
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "401":
+          description: Unauthorized
+          schema:
+            type: string
+      summary: Add user to waitlist
+      tags:
+      - user
+swagger: "2.0"

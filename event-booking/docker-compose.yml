@@ -1,0 +1,86 @@
+
+x-booking-common-env: &booking-common-env
+  DB_REPLICA_HOST: ${DB_REPLICA_HOST:-event-db-replica}
+  DB_REPLICA_PORT: ${DB_REPLICA_PORT:-5432}
+  DB_USER: ${DB_USER:-event_service}
+  DB_PASSWORD: ${DB_PASSWORD:-event_pass_secure}
+  DB_NAME: ${DB_NAME:-event_db}
+  DB_SSLMODE: ${DB_SSLMODE:-disable}
+
+  HTTP_HOST: ${HTTP_HOST:-0.0.0.0}
+  HTTP_PORT: ${HTTP_PORT:-3434}
+
+  JWT_SECRET: ${JWT_SECRET:-test-secret-key}
+
+  BOOKING_TICKET_LOCK_TTL: ${BOOKING_TICKET_LOCK_TTL:-10m}
+
+  OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-otel-collector:4317}
+  OTEL_EXPORTER_OTLP_PROTOCOL: ${OTEL_EXPORTER_OTLP_PROTOCOL:-grpc}
+  OTEL_SERVICE_NAME: ${OTEL_SERVICE_NAME:-event-booking-service}
+
+  TRANSFER_KAFKA_HOST: ${TRANSFER_KAFKA_HOST:-kafka}
+  TRANSFER_KAFKA_PORT: ${TRANSFER_KAFKA_PORT:-29092}
+  TRANSFER_KAFKA_TOPIC: ${TRANSFER_KAFKA_TOPIC:-ticket_transfer_requested}
+  TRANSFER_KAFKA_AUTO_CREATE_TOPIC: ${TRANSFER_KAFKA_AUTO_CREATE_TOPIC:-false}
+  TRANSFER_KAFKA_REQUIRED_ACKS: ${TRANSFER_KAFKA_REQUIRED_ACKS:-1}
+  TRANSFER_KAFKA_MAX_RETRIES: ${TRANSFER_KAFKA_MAX_RETRIES:-3}
+  TRANSFER_KAFKA_WRITE_TIMEOUT: ${TRANSFER_KAFKA_WRITE_TIMEOUT:-10s}
+  TRANSFER_KAFKA_BATCH_SIZE: ${TRANSFER_KAFKA_BATCH_SIZE:-100}
+  TRANSFER_KAFKA_BATCH_TIMEOUT: ${TRANSFER_KAFKA_BATCH_TIMEOUT:-1s}
+
+services:
+  booking-redis:
+    image: redis:7.2-alpine
+    container_name: booking_redis
+    ports:
+      - "3345:6379"
+    volumes:
+      - booking_redis_data:/data
+    networks:
+      - booking_net
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+
+  booking-server:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      ssh:
+        - default
+    container_name: booking_server
+    restart: unless-stopped
+    ports:
+      - "3434:3434"
+    depends_on:
+      booking-redis:
+        condition: service_healthy
+    env_file:
+      - .env
+    environment:
+      <<: *booking-common-env
+
+      HOST_REDIS: ${HOST_REDIS:-booking_redis}
+      PORT_REDIS: ${PORT_REDIS:-6379}
+
+    networks:
+      - booking_net
+      - infra_shared
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+networks:
+  booking_net:
+    driver: bridge
+
+  infra_shared:
+    external: true
+    name: infra_shared
+
+volumes:
+  booking_redis_data:
+
+

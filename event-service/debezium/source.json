@@ -1,0 +1,25 @@
+{
+  "connector.class": "io.debezium.connector.postgresql.PostgresConnector",
+  "tasks.max": "1",
+
+  "database.hostname": "event-db-replica",
+  "database.port": "5432",
+  "database.user": "event_service",
+  "database.password": "event_pass_secure",
+  "database.dbname": "event_db",
+
+  "topic.prefix": "event_service",
+  "table.include.list": "public.events",
+  "plugin.name": "pgoutput",
+
+  "slot.name": "debezium_replica_slot",
+  "publication.autocreate.mode": "filtered",
+
+  "tombstones.on.delete": "false",
+
+  "transforms": "unwrap",
+  "transforms.unwrap.type": "io.debezium.transforms.ExtractNewRecordState",
+  "transforms.unwrap.drop.tombstones": "false",
+
+  "delete.enabled": "true"
+}

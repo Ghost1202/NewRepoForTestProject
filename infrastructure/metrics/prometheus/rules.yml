@@ -1,0 +1,13 @@
+groups:
+  - name: sso-alerts
+    rules:
+      - alert: SSOHighRPS
+        expr: sum(rate(otel_traces_span_metrics_calls_total{service_name="sso"}[1m])) > 10
+        for: 1m
+        labels:
+          severity: critical
+          service: sso
+        annotations:
+          summary: "High Load on SSO"
+          description: "RPS exceeded safe limit(10)"
+          value: "{{ $value | printf \"%.2f\" }}"

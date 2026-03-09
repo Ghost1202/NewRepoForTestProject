@@ -1,0 +1,72 @@
+{
+    "swagger": "2.0",
+    "info": {
+        "description": "API service for event ticket booking. Features include Redis-based ticket locking, Postgres slave-read optimization, and Kafka event streaming for payments.",
+        "title": "Event Booking Service API",
+        "contact": {
+            "name": "POP",
+            "url": "https://github.com/turtlepavlo"
+        },
+        "version": "1.0"
+    },
+    "host": "localhost:3434",
+    "basePath": "/api/v1",
+    "paths": {
+        "/bookings": {
+            "post": {
+                "description": "Create a temporary reservation in Redis and return payment URL.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "bookings"
+                ],
+                "summary": "Book a ticket",
+                "responses": {}
+            }
+        },
+        "/payments/webhook": {
+            "post": {
+                "description": "Receive payment confirmation from Stripe and finalize booking in DB.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "payments"
+                ],
+                "summary": "Stripe Webhook",
+                "responses": {}
+            }
+        },
+        "/tickets": {
+            "get": {
+                "description": "Get a list of tickets for a specific event from the Slave DB.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "tickets"
+                ],
+                "summary": "Get event tickets",
+                "responses": {}
+            }
+        }
+    },
+    "securityDefinitions": {
+        "Bearer": {
+            "description": "Type 'Bearer ' followed by your JWT token.",
+            "type": "apiKey",
+            "name": "Authorization",
+            "in": "header"
+        }
+    }
+}

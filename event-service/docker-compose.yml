@@ -1,0 +1,334 @@
+version: "3.9"
+
+x-event-service-common-env: &event-service-common-env
+  DB_HOST: ${DB_HOST:-event-db}
+  DB_REPLICA_HOST: ${DB_REPLICA_HOST:-event-db-replica}
+  DB_PORT: ${DB_PORT:-5432}
+  DB_USER: ${DB_USER:-event_service}
+  DB_PASSWORD: ${DB_PASSWORD:-event_pass_secure}
+  DB_NAME: ${DB_NAME:-event_db}
+  DB_SSLMODE: ${DB_SSLMODE:-disable}
+  DB_REPLICA_PORT: ${DB_REPLICA_PORT:-5432}
+
+  JWT_SECRET: ${JWT_SECRET:-test-secret-key}
+  HTTP_PORT: ${HTTP_PORT:-6660}
+  HTTP_HOST: ${HTTP_HOST:-0.0.0.0}
+
+  LOGGER_LEVEL: ${LOGGER_LEVEL:-info}
+
+  APP_NAME: ${APP_NAME:-event-service}
+  TELEMETRY_ENABLED: ${TELEMETRY_ENABLED:-true}
+  TELEMETRY_SERVICE_NAME: ${TELEMETRY_SERVICE_NAME:-event-service}
+  OTEL_SERVICE_NAME: ${TELEMETRY_SERVICE_NAME:-event-service}
+  OTEL_EXPORTER_OTLP_ENDPOINT: ${TELEMETRY_EXPORTER_ENDPOINT:-otel-collector:4317}
+
+  KAFKA_HOST: ${KAFKA_HOST:-kafka}
+  KAFKA_PORT: ${KAFKA_PORT:-29092}
+  KAFKA_TOPIC: ${KAFKA_TOPIC:-payment_events}
+  KAFKA_CONSUMER_GROUP: ${KAFKA_CONSUMER_GROUP:-event_service_group}
+  KAFKA_MIN_BYTES: ${KAFKA_MIN_BYTES:-10240}
+  KAFKA_MAX_BYTES: ${KAFKA_MAX_BYTES:-10485760}
+
+  WALLET_CHARGE_KAFKA_HOST: ${WALLET_CHARGE_KAFKA_HOST:-${KAFKA_HOST:-kafka}}
+  WALLET_CHARGE_KAFKA_PORT: ${WALLET_CHARGE_KAFKA_PORT:-${KAFKA_PORT:-29092}}
+  WALLET_CHARGE_TOPIC: ${WALLET_CHARGE_TOPIC:-wallet.charge.completed}
+  WALLET_CHARGE_GROUP: ${WALLET_CHARGE_GROUP:-event_service_wallet_group}
+  WALLET_CHARGE_MIN_BYTES: ${WALLET_CHARGE_MIN_BYTES:-10240}
+  WALLET_CHARGE_MAX_BYTES: ${WALLET_CHARGE_MAX_BYTES:-10485760}
+
+  TRANSFER_KAFKA_HOST: ${TRANSFER_KAFKA_HOST:-${KAFKA_HOST:-kafka}}
+  TRANSFER_KAFKA_PORT: ${TRANSFER_KAFKA_PORT:-${KAFKA_PORT:-29092}}
+  TRANSFER_KAFKA_TOPIC: ${TRANSFER_KAFKA_TOPIC:-ticket_transfer_requested}
+  TRANSFER_KAFKA_CONSUMER_GROUP: ${TRANSFER_KAFKA_CONSUMER_GROUP:-event_service_transfer_group}
+  TRANSFER_KAFKA_MIN_BYTES: ${TRANSFER_KAFKA_MIN_BYTES:-10240}
+  TRANSFER_KAFKA_MAX_BYTES: ${TRANSFER_KAFKA_MAX_BYTES:-10485760}
+
+services:
+  event-db:
+    image: postgres:15-alpine
+    container_name: event-db
+    command: >
+      postgres
+      -c wal_level=logical
+      -c max_replication_slots=10
+      -c max_wal_senders=10
+      -c hot_standby=on
+      -c hot_standby_feedback=on
+      -c hba_file=/etc/postgresql/pg_hba.conf
+    environment:
+      POSTGRES_USER: ${DB_USER:-event_service}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-event_pass_secure}
+      POSTGRES_DB: ${DB_NAME:-event_db}
+    volumes:
+      - ./db/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+      - ./db/postgres/pg_hba.conf:/etc/postgresql/pg_hba.conf:ro
+      - event_service_db_data:/var/lib/postgresql/data
+    ports:
+      - "55432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-event_service} -d ${DB_NAME:-event_db}"]
+      interval: 3s
+      timeout: 5s
+      retries: 20
+      start_period: 5s
+    networks:
+      - default
+
+  event-db-replica:
+    image: postgres:15-alpine
+    container_name: event-db-replica
+    depends_on:
+      event-db:
+        condition: service_healthy
+    environment:
+      PGPASSWORD: ${DB_PASSWORD:-event_pass_secure}
+    volumes:
+      - event_service_replica_data:/var/lib/postgresql/data
+    ports:
+      - "55433:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-event_service} -d ${DB_NAME:-event_db}"]
+      interval: 3s
+      timeout: 5s
+      retries: 30
+      start_period: 5s
+    networks:
+      - default
+    command: >
+      /bin/sh -ec "
+      set -e;
+
+      apk add --no-cache su-exec >/dev/null 2>&1 || true;
+
+      mkdir -p /var/lib/postgresql/data;
+      chown -R postgres:postgres /var/lib/postgresql/data;
+      chmod 0700 /var/lib/postgresql/data;
+
+      if [ ! -s /var/lib/postgresql/data/PG_VERSION ]; then
+        echo 'Cloning Master Database...';
+        su-exec postgres pg_basebackup -h event-db -D /var/lib/postgresql/data -U ${DB_USER:-event_service} -vP -R;
+      fi;
+
+      chown -R postgres:postgres /var/lib/postgresql/data;
+      chmod 0700 /var/lib/postgresql/data;
+
+      echo 'Starting Replica...';
+      exec su-exec postgres postgres
+        -c hot_standby=on
+        -c wal_level=logical
+        -c primary_conninfo=\"host=event-db port=5432 user=${DB_USER:-event_service} password=${DB_PASSWORD:-event_pass_secure}\"
+      "
+
+  event-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      ssh:
+        - default
+    container_name: event-service
+    env_file:
+      - .env
+    environment:
+      <<: *event-service-common-env
+    depends_on:
+      event-db:
+        condition: service_healthy
+    ports:
+      - "${HTTP_PORT_HOST:-6660}:6660"
+    networks:
+      - default
+      - infra_shared
+    restart: unless-stopped
+
+  event-debezium:
+    image: debezium/connect:2.4
+    container_name: event-debezium
+    ports:
+      - "8083:8083"
+    environment:
+      BOOTSTRAP_SERVERS: "${KAFKA_HOST:-kafka}:${KAFKA_PORT:-29092}"
+
+      GROUP_ID: event_service_cdc
+      CONFIG_STORAGE_TOPIC: event_service_cdc_configs
+      OFFSET_STORAGE_TOPIC: event_service_cdc_offsets
+      STATUS_STORAGE_TOPIC: event_service_cdc_statuses
+
+      CONFIG_STORAGE_REPLICATION_FACTOR: "1"
+      OFFSET_STORAGE_REPLICATION_FACTOR: "1"
+      STATUS_STORAGE_REPLICATION_FACTOR: "1"
+
+      KEY_CONVERTER: org.apache.kafka.connect.json.JsonConverter
+      VALUE_CONVERTER: org.apache.kafka.connect.json.JsonConverter
+      CONNECT_KEY_CONVERTER_SCHEMAS_ENABLE: "false"
+      CONNECT_VALUE_CONVERTER_SCHEMAS_ENABLE: "false"
+
+      CONNECT_REST_ADVERTISED_HOST_NAME: event-debezium
+      CONNECT_REST_PORT: "8083"
+      CONNECT_PLUGIN_PATH: /kafka/connect
+    depends_on:
+      event-db-replica:
+        condition: service_healthy
+    networks:
+      - default
+      - infra_shared
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8083/ >/dev/null || exit 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 40
+      start_period: 30s
+
+  event-debezium-init:
+    image: curlimages/curl:8.6.0
+    container_name: event-debezium-init
+    depends_on:
+      event-debezium:
+        condition: service_healthy
+    networks:
+      - infra_shared
+    restart: "no"
+    entrypoint: []
+    command:
+      - /bin/sh
+      - -ec
+      - |
+          set -euo pipefail
+
+          echo "--- 1) Wait for Elasticsearch ---"
+          until [ "$(curl -s -o /dev/null -w '%{http_code}' http://elasticsearch:9200)" = "200" ]; do
+            echo "waiting for ES..."
+            sleep 2
+          done
+
+          echo "--- 2) Ensure ES index/mapping ---"
+          cat > /tmp/es-index.json <<'JSON'
+          {
+            "mappings": {
+              "properties": {
+                "id": { "type": "long" },
+                "performer_id": { "type": "long" },
+                "venue_id": { "type": "long" },
+                "name": { "type": "text", "fields": { "keyword": { "type": "keyword" } } },
+                "date_start": { "type": "date" },
+                "is_sold_out": { "type": "boolean" },
+                "info_header": { "type": "text" },
+                "info_body": { "type": "text" },
+                "popularity": { "type": "long" }
+              }
+            }
+          }
+          JSON
+
+          cat > /tmp/es-mapping.json <<'JSON'
+          {
+            "properties": {
+              "id": { "type": "long" },
+              "performer_id": { "type": "long" },
+              "venue_id": { "type": "long" },
+              "name": { "type": "text", "fields": { "keyword": { "type": "keyword" } } },
+              "date_start": { "type": "date" },
+              "is_sold_out": { "type": "boolean" },
+              "info_header": { "type": "text" },
+              "info_body": { "type": "text" },
+              "popularity": { "type": "long" }
+            }
+          }
+          JSON
+
+          if [ "$(curl -s -o /dev/null -w '%{http_code}' http://elasticsearch:9200/event_service.public.events)" = "404" ]; then
+            echo "creating index: event_service.public.events"
+            curl -fsS -i -X PUT "http://elasticsearch:9200/event_service.public.events" \
+              -H "Content-Type: application/json" \
+              --data-binary "@/tmp/es-index.json"
+            echo
+          else
+            echo "index exists -> updating mapping: event_service.public.events"
+            curl -fsS -i -X PUT "http://elasticsearch:9200/event_service.public.events/_mapping" \
+              -H "Content-Type: application/json" \
+              --data-binary "@/tmp/es-mapping.json"
+            echo
+          fi
+
+          echo "--- 3) Wait for Connect REST ---"
+          until [ "$(curl -s -o /dev/null -w '%{http_code}' http://event-debezium:8083/)" = "200" ]; do
+            echo "waiting for Connect..."
+            sleep 2
+          done
+
+          echo "--- 4) Create/Update connector event-source ---"
+          cat > /tmp/connector-config.json <<'JSON'
+          {
+            "connector.class": "io.debezium.connector.postgresql.PostgresConnector",
+            "tasks.max": "1",
+            "database.hostname": "event-db",
+            "database.port": "5432",
+            "database.user": "event_service",
+            "database.password": "event_pass_secure",
+            "database.dbname": "event_db",
+            "topic.prefix": "event_service",
+            "table.include.list": "public.events",
+            "plugin.name": "pgoutput",
+            "slot.name": "debezium_replica_slot",
+            "publication.autocreate.mode": "filtered",
+            "tombstones.on.delete": "false",
+            "transforms": "unwrap",
+            "transforms.unwrap.type": "io.debezium.transforms.ExtractNewRecordState",
+            "transforms.unwrap.drop.tombstones": "false",
+            "delete.enabled": "true"
+          }
+          JSON
+
+          if [ "$(curl -s -o /dev/null -w '%{http_code}' http://event-debezium:8083/connectors/event-source)" = "200" ]; then
+            echo "connector exists -> PUT config"
+            curl -fsS -i -X PUT "http://event-debezium:8083/connectors/event-source/config" \
+              -H "Content-Type: application/json" \
+              --data-binary "@/tmp/connector-config.json"
+            echo
+          else
+            echo "connector not found -> POST create"
+            cat > /tmp/create-connector.json <<'JSON'
+          {
+            "name": "event-source",
+            "config": {
+              "connector.class": "io.debezium.connector.postgresql.PostgresConnector",
+              "tasks.max": "1",
+              "database.hostname": "event-db",
+              "database.port": "5432",
+              "database.user": "event_service",
+              "database.password": "event_pass_secure",
+              "database.dbname": "event_db",
+              "topic.prefix": "event_service",
+              "table.include.list": "public.events",
+              "plugin.name": "pgoutput",
+              "slot.name": "debezium_replica_slot",
+              "publication.autocreate.mode": "filtered",
+              "tombstones.on.delete": "false",
+              "transforms": "unwrap",
+              "transforms.unwrap.type": "io.debezium.transforms.ExtractNewRecordState",
+              "transforms.unwrap.drop.tombstones": "false",
+              "delete.enabled": "true"
+            }
+          }
+          JSON
+            curl -fsS -i -X POST "http://event-debezium:8083/connectors" \
+              -H "Content-Type: application/json" \
+              --data-binary "@/tmp/create-connector.json"
+            echo
+          fi
+
+          echo "--- 5) List connectors ---"
+          curl -fsS "http://event-debezium:8083/connectors"
+          echo
+
+volumes:
+  event_service_db_data:
+  event_service_replica_data:
+
+networks:
+  default:
+    driver: bridge
+
+  infra_shared:
+    external: true
+    name: infra_shared

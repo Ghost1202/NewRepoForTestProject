@@ -1,0 +1,6 @@
+services:
+  client:
+    build:
+      context: .
+    ports:
+      - "5173:80"

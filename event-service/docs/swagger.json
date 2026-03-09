@@ -1,0 +1,815 @@
+{
+    "swagger": "2.0",
+    "info": {
+        "description": "API for managing events, sectors, and ticket configurations.",
+        "title": "Event Service API",
+        "contact": {},
+        "version": "1.0"
+    },
+    "host": "localhost:6660",
+    "basePath": "/api/v1",
+    "paths": {
+        "/events": {
+            "put": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Updates an existing event. Restricted to users with the 'admin' role.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "events"
+                ],
+                "summary": "Update event details",
+                "parameters": [
+                    {
+                        "description": "Event update data",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_transport_http_handler.UpdateEventReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Creates an event and generates tickets for it using \"constructor\" and adds promos.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "events"
+                ],
+                "summary": "Create a new event with tickets",
+                "parameters": [
+                    {
+                        "description": "Event creation data",
+                        "name": "event",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_transport_http_handler.CreateEventReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/internal_transport_http_handler.CreateEventResp"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/promos/bundle": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Adds bundle promo codes linked to an event.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "promos"
+                ],
+                "summary": "Add bundle promo to an existing event",
+                "parameters": [
+                    {
+                        "description": "Bundle promo data",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_transport_http_handler.AddBundleReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/internal_transport_http_handler.AddBundleResp"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/promos/bundle/search": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Get list of bundle promos filtered by event_id with pagination.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "promos"
+                ],
+                "summary": "Get bundle promos",
+                "parameters": [
+                    {
+                        "description": "Filter and Pagination",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_transport_http_handler.GetBundleReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/internal_transport_http_handler.GetBundleRes"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/promos/early": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Adds early promo codes linked to an event.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "promos"
+                ],
+                "summary": "Add early promo to an existing event",
+                "parameters": [
+                    {
+                        "description": "Early promo data",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_transport_http_handler.AddEarlyReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/internal_transport_http_handler.AddEarlyResp"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/promos/early/search": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Get list of early promos filtered by event_id with pagination.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "promos"
+                ],
+                "summary": "Get early promos",
+                "parameters": [
+                    {
+                        "description": "Filter and Pagination",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_transport_http_handler.GetEarlyReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/internal_transport_http_handler.GetEarlyRes"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/promos/promo": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Adds promo codes linked to an event.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "promos"
+                ],
+                "summary": "Add promo to an existing event",
+                "parameters": [
+                    {
+                        "description": "Promo data",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_transport_http_handler.AddPromoReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/internal_transport_http_handler.AddPromoResp"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/promos/promo/search": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Get list of promos filtered by event_id with pagination.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "promos"
+                ],
+                "summary": "Get promos",
+                "parameters": [
+                    {
+                        "description": "Filter and Pagination",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_transport_http_handler.GetPromoReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/internal_transport_http_handler.GetPromoRes"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "internal_transport_http_handler.AddBundleReq": {
+            "type": "object",
+            "properties": {
+                "bundles": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/internal_transport_http_handler.Bundle"
+                    }
+                },
+                "event_id": {
+                    "type": "integer",
+                    "example": 5501
+                }
+            }
+        },
+        "internal_transport_http_handler.AddBundleResp": {
+            "type": "object",
+            "properties": {
+                "bundle_ids": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    },
+                    "example": [
+                        7
+                    ]
+                }
+            }
+        },
+        "internal_transport_http_handler.AddEarlyReq": {
+            "type": "object",
+            "properties": {
+                "early": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/internal_transport_http_handler.Early"
+                    }
+                },
+                "event_id": {
+                    "type": "integer",
+                    "example": 5501
+                }
+            }
+        },
+        "internal_transport_http_handler.AddEarlyResp": {
+            "type": "object",
+            "properties": {
+                "early_ids": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    },
+                    "example": [
+                        12
+                    ]
+                }
+            }
+        },
+        "internal_transport_http_handler.AddPromoReq": {
+            "type": "object",
+            "properties": {
+                "event_id": {
+                    "type": "integer",
+                    "example": 5501
+                },
+                "promos": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/internal_transport_http_handler.Promo"
+                    }
+                }
+            }
+        },
+        "internal_transport_http_handler.AddPromoResp": {
+            "type": "object",
+            "properties": {
+                "promo_ids": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    },
+                    "example": [
+                        88
+                    ]
+                }
+            }
+        },
+        "internal_transport_http_handler.Bundle": {
+            "type": "object",
+            "properties": {
+                "buy_count": {
+                    "type": "integer",
+                    "example": 2
+                },
+                "code": {
+                    "type": "string",
+                    "example": "B2G1"
+                },
+                "get_count": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "sector": {
+                    "type": "string",
+                    "example": "VIP"
+                }
+            }
+        },
+        "internal_transport_http_handler.CreateEventReq": {
+            "type": "object",
+            "properties": {
+                "bundles": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/internal_transport_http_handler.Bundle"
+                    }
+                },
+                "constructor": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/internal_transport_http_handler.TicketConstructor"
+                    }
+                },
+                "date_start": {
+                    "type": "string",
+                    "example": "2026-10-05T19:30:00Z"
+                },
+                "early": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/internal_transport_http_handler.Early"
+                    }
+                },
+                "max_price_cof": {
+                    "type": "number",
+                    "example": 2.5
+                },
+                "min_price_cof": {
+                    "type": "number",
+                    "example": 1
+                },
+                "name": {
+                    "type": "string",
+                    "example": "Grand Rock Concert"
+                },
+                "post_date": {
+                    "type": "string",
+                    "example": "2026-09-01T10:00:00Z"
+                },
+                "promos": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/internal_transport_http_handler.Promo"
+                    }
+                },
+                "sale_start_date": {
+                    "type": "string",
+                    "example": "2026-09-05T09:00:00Z"
+                },
+                "venue_id": {
+                    "type": "integer",
+                    "example": 33
+                }
+            }
+        },
+        "internal_transport_http_handler.CreateEventResp": {
+            "type": "object",
+            "properties": {
+                "event_id": {
+                    "type": "integer",
+                    "example": 5501
+                }
+            }
+        },
+        "internal_transport_http_handler.Early": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "string",
+                    "example": "EARLYBIRD"
+                },
+                "sector": {
+                    "type": "string",
+                    "example": "VIP"
+                },
+                "type": {
+                    "type": "string",
+                    "example": "percent"
+                },
+                "valid_until": {
+                    "type": "string",
+                    "example": "2026-09-10T09:00:00Z"
+                },
+                "value": {
+                    "type": "number",
+                    "example": 15
+                }
+            }
+        },
+        "internal_transport_http_handler.GetBundleReq": {
+            "type": "object",
+            "properties": {
+                "event_id": {
+                    "type": "integer",
+                    "example": 5501
+                },
+                "limit": {
+                    "type": "integer",
+                    "example": 10
+                },
+                "offset": {
+                    "type": "integer",
+                    "example": 0
+                }
+            }
+        },
+        "internal_transport_http_handler.GetBundleRes": {
+            "type": "object",
+            "properties": {
+                "bundles": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/internal_transport_http_handler.Bundle"
+                    }
+                }
+            }
+        },
+        "internal_transport_http_handler.GetEarlyReq": {
+            "type": "object",
+            "properties": {
+                "event_id": {
+                    "type": "integer",
+                    "example": 5501
+                },
+                "limit": {
+                    "type": "integer",
+                    "example": 10
+                },
+                "offset": {
+                    "type": "integer",
+                    "example": 0
+                }
+            }
+        },
+        "internal_transport_http_handler.GetEarlyRes": {
+            "type": "object",
+            "properties": {
+                "early": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/internal_transport_http_handler.Early"
+                    }
+                }
+            }
+        },
+        "internal_transport_http_handler.GetPromoReq": {
+            "type": "object",
+            "properties": {
+                "event_id": {
+                    "type": "integer",
+                    "example": 5501
+                },
+                "limit": {
+                    "type": "integer",
+                    "example": 10
+                },
+                "offset": {
+                    "type": "integer",
+                    "example": 0
+                }
+            }
+        },
+        "internal_transport_http_handler.GetPromoRes": {
+            "type": "object",
+            "properties": {
+                "promos": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/internal_transport_http_handler.Promo"
+                    }
+                }
+            }
+        },
+        "internal_transport_http_handler.Promo": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "string",
+                    "example": "PROMO10"
+                },
+                "sector": {
+                    "type": "string",
+                    "example": "VIP"
+                },
+                "type": {
+                    "type": "string",
+                    "example": "percent"
+                },
+                "value": {
+                    "type": "number",
+                    "example": 10
+                }
+            }
+        },
+        "internal_transport_http_handler.TicketConstructor": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "type": "string",
+                    "example": "VIP"
+                },
+                "price": {
+                    "type": "integer",
+                    "example": 5000
+                },
+                "rows_count": {
+                    "type": "integer",
+                    "example": 3
+                },
+                "seats_per_row": {
+                    "type": "integer",
+                    "example": 12
+                },
+                "type": {
+                    "type": "string",
+                    "example": "vip"
+                }
+            }
+        },
+        "internal_transport_http_handler.UpdateEventReq": {
+            "type": "object",
+            "properties": {
+                "date_start": {
+                    "type": "string",
+                    "example": "2026-10-06T19:30:00Z"
+                },
+                "event_id": {
+                    "type": "integer",
+                    "example": 5501
+                },
+                "max_price_cof": {
+                    "type": "number",
+                    "example": 3
+                },
+                "min_price_cof": {
+                    "type": "number",
+                    "example": 1.2
+                },
+                "name": {
+                    "type": "string",
+                    "example": "Grand Rock Concert - Rescheduled"
+                }
+            }
+        }
+    },
+    "securityDefinitions": {
+        "ApiKeyAuth": {
+            "type": "apiKey",
+            "name": "Authorization",
+            "in": "header"
+        }
+    }
+}

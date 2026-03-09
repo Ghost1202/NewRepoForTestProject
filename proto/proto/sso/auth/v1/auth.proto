@@ -1,0 +1,53 @@
+syntax = "proto3";
+
+package sso.auth.v1;
+
+option go_package = "github.com/turtlepavlo/proto-contract/gen/go/sso/auth/v1;authv1";
+
+service AuthService {
+  rpc Register (RegisterRequest) returns (RegisterResponse);
+  rpc Login (LoginRequest) returns (LoginResponse);
+  rpc ValidateToken (ValidateTokenRequest) returns (ValidateTokenResponse);
+}
+
+message User {
+  int64  id        = 1;
+  string name      = 2;
+  string last_name = 3;
+  string login     = 4;
+  string email     = 5;
+  string role      = 6;
+  bool   is_admin  = 7;
+}
+
+message RegisterRequest {
+  string name      = 1;
+  string last_name = 2;
+  string login     = 3;
+  string email     = 4;
+  string password  = 5;
+}
+
+message RegisterResponse {
+  int64 id = 1;
+}
+
+message LoginRequest {
+  bool   is_email   = 1; // true = identifier is email, false = login
+  string identifier = 2; // email or login, depending on is_email
+  string password   = 3;
+}
+
+message LoginResponse {
+  string access_token = 1;
+  User   user         = 2;
+}
+
+message ValidateTokenRequest {
+  string access_token = 1;
+}
+
+message ValidateTokenResponse {
+  bool  valid = 1;
+  User  user  = 2;
+}

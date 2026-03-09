@@ -1,0 +1,53 @@
+basePath: /api/v1
+host: localhost:3434
+info:
+  contact:
+    name: POP
+    url: https://github.com/turtlepavlo
+  description: API service for event ticket booking. Features include Redis-based
+    ticket locking, Postgres slave-read optimization, and Kafka event streaming for
+    payments.
+  title: Event Booking Service API
+  version: "1.0"
+paths:
+  /bookings:
+    post:
+      consumes:
+      - application/json
+      description: Create a temporary reservation in Redis and return payment URL.
+      produces:
+      - application/json
+      responses: {}
+      summary: Book a ticket
+      tags:
+      - bookings
+  /payments/webhook:
+    post:
+      consumes:
+      - application/json
+      description: Receive payment confirmation from Stripe and finalize booking in
+        DB.
+      produces:
+      - application/json
+      responses: {}
+      summary: Stripe Webhook
+      tags:
+      - payments
+  /tickets:
+    get:
+      consumes:
+      - application/json
+      description: Get a list of tickets for a specific event from the Slave DB.
+      produces:
+      - application/json
+      responses: {}
+      summary: Get event tickets
+      tags:
+      - tickets
+securityDefinitions:
+  Bearer:
+    description: Type 'Bearer ' followed by your JWT token.
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"

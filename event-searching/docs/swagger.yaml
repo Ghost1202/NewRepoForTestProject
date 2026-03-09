@@ -1,0 +1,153 @@
+basePath: /api/v1
+definitions:
+  handler.EventResponse:
+    properties:
+      date_sale_start:
+        example: "2026-01-01T10:00:00Z"
+        type: string
+      date_start:
+        example: "2026-05-20T19:00:00Z"
+        type: string
+      id:
+        example: 1
+        type: integer
+      info_body:
+        example: Doors open at 18:00
+        type: string
+      info_header:
+        example: Important Info
+        type: string
+      is_sold_out:
+        example: false
+        type: boolean
+      name:
+        example: Grand Concert
+        type: string
+      performer_id:
+        example: 101
+        type: integer
+      popularity:
+        example: 150
+        type: integer
+      venue_id:
+        example: 202
+        type: integer
+    type: object
+  handler.GetEventsFilterResponse:
+    properties:
+      count:
+        example: 5
+        type: integer
+      events:
+        items:
+          $ref: '#/definitions/handler.EventResponse'
+        type: array
+    type: object
+  handler.GetEventsResponse:
+    properties:
+      count:
+        example: 100
+        type: integer
+      events:
+        items:
+          $ref: '#/definitions/handler.EventResponse'
+        type: array
+    type: object
+host: localhost:4541
+info:
+  contact:
+    email: support@turtlepavlo.com
+    name: API Support
+  description: API service for searching and filtering events.
+  termsOfService: http://swagger.io/terms/
+  title: Event Searching Service API
+  version: "1.0"
+paths:
+  /events:
+    get:
+      consumes:
+      - application/json
+      description: Get a list of popular events from Redis cache (Hot Data). Ideal
+        for feeds.
+      parameters:
+      - description: Max records to return
+        in: query
+        name: limit
+        type: integer
+      - description: Number of records to skip
+        in: query
+        name: offset
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of popular events
+          schema:
+            $ref: '#/definitions/handler.GetEventsResponse'
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Get popular events
+      tags:
+      - events
+  /events/search:
+    get:
+      consumes:
+      - application/json
+      description: Full-text search for events using ElasticSearch.
+      parameters:
+      - description: Search text (name, description)
+        in: query
+        name: query
+        type: string
+      - description: Filter by performer ID
+        in: query
+        name: performer_id
+        type: integer
+      - description: Filter by venue ID
+        in: query
+        name: venue_id
+        type: integer
+      - description: Start date (RFC3339)
+        format: date-time
+        in: query
+        name: date_from
+        type: string
+      - description: End date (RFC3339)
+        format: date-time
+        in: query
+        name: date_to
+        type: string
+      - description: Max records to return
+        in: query
+        name: limit
+        type: integer
+      - description: Number of records to skip
+        in: query
+        name: offset
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Search results
+          schema:
+            $ref: '#/definitions/handler.GetEventsFilterResponse'
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Search events
+      tags:
+      - events
+swagger: "2.0"
