@@ -1,13 +1,13 @@
-version: '3.8'
+version: "3.8"
 
 x-payment-common-env: &payment-common-env
-  PAYMENT_DB_HOST: payment-db
-  PAYMENT_DB_PORT: 5432
+  PAYMENT_DB_HOST: ${PAYMENT_DB_HOST:-payment-db}
+  PAYMENT_DB_PORT: ${PAYMENT_DB_PORT:-5432}
   PAYMENT_DB_USER: ${PAYMENT_DB_USER:-postgres}
   PAYMENT_DB_PASSWORD: ${PAYMENT_DB_PASSWORD:-secret}
   PAYMENT_DB_NAME: ${PAYMENT_DB_NAME:-payment_db}
   PAYMENT_DB_SSLMODE: ${PAYMENT_DB_SSLMODE:-disable}
-  
+
   PAYMENT_DB_CONNECT_TIMEOUT: ${PAYMENT_DB_CONNECT_TIMEOUT:-10s}
   PAYMENT_DB_STATEMENT_TIMEOUT: ${PAYMENT_DB_STATEMENT_TIMEOUT:-30s}
   PAYMENT_DB_MAX_OPEN_CONNS: ${PAYMENT_DB_MAX_OPEN_CONNS:-10}
@@ -16,24 +16,24 @@ x-payment-common-env: &payment-common-env
   PAYMENT_DB_CONN_MAX_IDLE_TIME: ${PAYMENT_DB_CONN_MAX_IDLE_TIME:-10m}
 
   PAYMENT_APP_NAME: ${PAYMENT_APP_NAME:-payment_service}
- 
+  PAYMENT_DEFAULT_TOKEN_TTL: ${PAYMENT_DEFAULT_TOKEN_TTL:-30m}
+
   STRIPE_API_KEY: ${STRIPE_API_KEY}
   STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET}
   STRIPE_SUCCESS_URL: ${STRIPE_SUCCESS_URL}
   STRIPE_CANCEL_URL: ${STRIPE_CANCEL_URL}
-  PAYMENT_DEFAULT_TOKEN_TTL: ${PAYMENT_DEFAULT_TOKEN_TTL:-30m}
 
-  GRPC_HOST: 0.0.0.0
-  GRPC_PORT: 9094
+  GRPC_HOST: ${GRPC_HOST:-0.0.0.0}
+  GRPC_PORT: ${GRPC_PORT:-9094}
   GRPC_RECOVER_ENABLED: ${GRPC_RECOVER_ENABLED:-true}
   GRPC_RECOVER_STACK: ${GRPC_RECOVER_STACK:-true}
   GRPC_RECOVER_MESSAGE: ${GRPC_RECOVER_MESSAGE:-internal server error}
 
-  HTTP_HOST: 0.0.0.0
-  HTTP_PORT: 3755
-  HTTP_READ_TIMEOUT: 5s
-  HTTP_WRITE_TIMEOUT: 10s
-  HTTP_MAX_BODY_BYTES: 65536
+  HTTP_HOST: ${HTTP_HOST:-0.0.0.0}
+  HTTP_PORT: ${HTTP_PORT:-3755}
+  HTTP_READ_TIMEOUT: ${HTTP_READ_TIMEOUT:-5s}
+  HTTP_WRITE_TIMEOUT: ${HTTP_WRITE_TIMEOUT:-10s}
+  HTTP_MAX_BODY_BYTES: ${HTTP_MAX_BODY_BYTES:-65536}
 
   STRIPE_KAFKA_HOST: ${STRIPE_KAFKA_HOST:-kafka}
   STRIPE_KAFKA_PORT: ${STRIPE_KAFKA_PORT:-29092}
@@ -47,7 +47,7 @@ x-payment-common-env: &payment-common-env
 
   OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-otel-collector:4317}
   OTEL_EXPORTER_OTLP_PROTOCOL: ${OTEL_EXPORTER_OTLP_PROTOCOL:-grpc}
-  OTEL_SERVICE_NAME: ${PAYMENT_APP_NAME:-payment_service}
+  OTEL_SERVICE_NAME: ${OTEL_SERVICE_NAME:-payment_service}
 
 services:
   payment-db:
@@ -57,15 +57,13 @@ services:
       POSTGRES_USER: ${PAYMENT_DB_USER:-postgres}
       POSTGRES_PASSWORD: ${PAYMENT_DB_PASSWORD:-secret}
       POSTGRES_DB: ${PAYMENT_DB_NAME:-payment_db}
-    ports:
-      - "${PAYMENT_DB_PORT:-1567}:5432"
     volumes:
       - payment_db_data:/var/lib/postgresql/data
       - ./db/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
     networks:
-      - payment_net
+      - default
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${PAYMENT_DB_USER:-postgres}"]
+      test: ["CMD-SHELL", "pg_isready -U ${PAYMENT_DB_USER:-postgres} -d ${PAYMENT_DB_NAME:-payment_db}"]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -76,7 +74,7 @@ services:
       context: .
       dockerfile: Dockerfile
       args:
-        GITHUB_TOKEN: ${GITHUB_TOKEN} 
+        GITHUB_TOKEN: ${GITHUB_TOKEN}
     container_name: payment_server
     restart: unless-stopped
     ports:
@@ -90,7 +88,7 @@ services:
     environment:
       <<: *payment-common-env
     networks:
-      - payment_net
+      - default
       - analytics_net
       - monitoring_net
       - infra_shared
@@ -98,7 +96,7 @@ services:
       - "host.docker.internal:host-gateway"
 
 networks:
-  payment_net:
+  default:
     driver: bridge
 
   analytics_net:
@@ -115,4 +113,3 @@ networks:
 
 volumes:
   payment_db_data:
-

@@ -1,4 +1,4 @@
-version: '3.9'
+version: "3.9"
 
 x-sso-common-env: &sso-common-env
   DB_HOST: ${DB_HOST:-sso-db-test}
@@ -42,7 +42,7 @@ services:
       POSTGRES_PASSWORD: ${DB_PASSWORD:-password}
       POSTGRES_DB: ${DB_NAME:-sso_test}
     volumes:
-      - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-postgres} -d ${DB_NAME:-sso_test}"]
       interval: 2s
@@ -54,8 +54,6 @@ services:
   redis:
     image: redis:7.2-alpine
     container_name: sso_redis
-    ports:
-      - "6379:6379"
     volumes:
       - redis_data:/data
     networks:
@@ -75,6 +73,7 @@ services:
         GITHUB_TOKEN: ${GITHUB_TOKEN}
         GITHUB_PAT_TOKEN: ${GITHUB_PAT_TOKEN}
         GOPRIVATE: ${GOPRIVATE:-github.com/turtlepavlo/*}
+    container_name: sso_http
     env_file:
       - .env
     environment:
@@ -99,6 +98,7 @@ services:
         GITHUB_TOKEN: ${GITHUB_TOKEN}
         GITHUB_PAT_TOKEN: ${GITHUB_PAT_TOKEN}
         GOPRIVATE: ${GOPRIVATE:-github.com/turtlepavlo/*}
+    container_name: sso_grpc
     env_file:
       - .env
     environment:
@@ -116,6 +116,9 @@ services:
     restart: unless-stopped
 
 networks:
+  default:
+    driver: bridge
+
   infra_shared:
     external: true
     name: infra_shared

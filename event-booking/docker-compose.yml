@@ -1,3 +1,4 @@
+version: "3.9"
 
 x-booking-common-env: &booking-common-env
   DB_REPLICA_HOST: ${DB_REPLICA_HOST:-event-db-replica}
@@ -32,12 +33,10 @@ services:
   booking-redis:
     image: redis:7.2-alpine
     container_name: booking_redis
-    ports:
-      - "3345:6379"
     volumes:
       - booking_redis_data:/data
     networks:
-      - booking_net
+      - default
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 5s
@@ -62,18 +61,16 @@ services:
       - .env
     environment:
       <<: *booking-common-env
-
       HOST_REDIS: ${HOST_REDIS:-booking_redis}
       PORT_REDIS: ${PORT_REDIS:-6379}
-
     networks:
-      - booking_net
+      - default
       - infra_shared
     extra_hosts:
       - "host.docker.internal:host-gateway"
 
 networks:
-  booking_net:
+  default:
     driver: bridge
 
   infra_shared:
@@ -82,5 +79,3 @@ networks:
 
 volumes:
   booking_redis_data:
-
-
