@@ -1,0 +1,16 @@
+.git
+.gitignore
+.github
+.env
+.env.*
+!.env.example
+coverage
+coverage.out
+repo
+repo.out
+node_modules
+dist
+playwright-report
+test-results
+tmp
+*.log
