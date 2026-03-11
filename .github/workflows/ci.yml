@@ -94,9 +94,6 @@ jobs:
       - name: Install govulncheck
         run: go install golang.org/x/vuln/cmd/govulncheck@latest
 
-      - name: Sync Go workspace
-        run: go work sync
-
       - name: Run vulnerability checks
         run: |
           set -euo pipefail
@@ -127,9 +124,6 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
           cache-dependency-path: client/package-lock.json
-
-      - name: Sync Go workspace
-        run: go work sync
 
       - name: Run Go tests
         run: |
