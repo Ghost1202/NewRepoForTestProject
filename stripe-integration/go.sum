@@ -56,10 +56,6 @@ github.com/stretchr/testify v1.11.1 h1:7s2iGBzp5EwR7/aIZr8ao5+dra3wiQyKjjFuvgVKu
 github.com/stretchr/testify v1.11.1/go.mod h1:wZwfW3scLgRK+23gO65QZefKpKQRnfz6sD981Nm4B6U=
 github.com/stripe/stripe-go/v76 v76.25.0 h1:kmDoOTvdQSTQssQzWZQQkgbAR2Q8eXdMWbN/ylNalWA=
 github.com/stripe/stripe-go/v76 v76.25.0/go.mod h1:rw1MxjlAKKcZ+3FOXgTHgwiOa2ya6CPq6ykpJ0Q6Po4=
-github.com/turtlepavlo/proto-contract v0.0.17 h1:vlK7LaBif8wKPuxooVVqWLRDabUCXUtkyQDMC9vx1AE=
-github.com/turtlepavlo/proto-contract v0.0.17/go.mod h1:Nf4x9tojgpimkl67H50iZygfgRuU80foWxJtTXl0tcU=
-github.com/turtlepavlo/sso v0.0.0-20251223153241-90f8beade1f5 h1:Q8SlVMK2YGML1Os8W/FPPezUlzKT8PG28Zfh0LB6NKY=
-github.com/turtlepavlo/sso v0.0.0-20251223153241-90f8beade1f5/go.mod h1:C9B/x5ub/1ZgWoZmTAmddp7tA4GzgMu2bh5yGWHgZFc=
 github.com/xdg-go/pbkdf2 v1.0.0 h1:Su7DPu48wXMwC3bs7MCNG+z4FhcyEuz5dlvchbq0B0c=
 github.com/xdg-go/pbkdf2 v1.0.0/go.mod h1:jrpuAogTd400dnrH08LKmI/xc1MbPOebTwRqcT5RDeI=
 github.com/xdg-go/scram v1.1.2 h1:FHX5I5B4i4hKRVRBCFRxq1iQRej7WO3hhBuJf+UUySY=

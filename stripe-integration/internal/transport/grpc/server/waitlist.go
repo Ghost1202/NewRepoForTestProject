@@ -8,26 +8,22 @@ import (
 	otelCodes "go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/zap"
-
 	grpcCodes "google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-	"google.golang.org/protobuf/types/known/emptypb"
 
 	paymentv1 "github.com/turtlepavlo/proto-contract/gen/go/payment/v1"
 	"github.com/turtlepavlo/stripe_integration/pkg/telemetry"
 )
 
-func (s *Server) Waitlist(ctx context.Context, req *paymentv1.WaitlistRequest) (*emptypb.Empty, error) {
+func (s *Server) Waitlist(ctx context.Context, req *paymentv1.WaitlistRequest) (*paymentv1.WaitlistResponse, error) {
 	const op = "server.Server.Waitlist"
 
 	tracer := otel.Tracer("stripe-integration/internal/transport/grpc/server")
-	ctx, span := tracer.Start(ctx, op,
-		trace.WithAttributes(
-			attribute.String("rpc.system", "grpc"),
-			attribute.String("rpc.service", "payment.v1.PaymentService"),
-			attribute.String("rpc.method", "Waitlist"),
-		),
-	)
+	ctx, span := tracer.Start(ctx, op, trace.WithAttributes(
+		attribute.String("rpc.system", "grpc"),
+		attribute.String("rpc.service", "payment.v1.PaymentService"),
+		attribute.String("rpc.method", "Waitlist"),
+	))
 	defer span.End()
 
 	log := telemetry.WithTrace(ctx, s.log).With(zap.String("op", op))
@@ -47,6 +43,7 @@ func (s *Server) Waitlist(ctx context.Context, req *paymentv1.WaitlistRequest) (
 	)
 
 	entry := s.reqConv.ToWaitlistInput(req)
+
 	log.Debug("adding user to waitlist")
 	if err := s.service.AddUserToWaitlist(ctx, entry); err != nil {
 		span.RecordError(err)
@@ -56,5 +53,5 @@ func (s *Server) Waitlist(ctx context.Context, req *paymentv1.WaitlistRequest) (
 	}
 
 	log.Info("user added to waitlist")
-	return &emptypb.Empty{}, nil
+	return &paymentv1.WaitlistResponse{}, nil
 }
