@@ -18,7 +18,6 @@ env:
 
 jobs:
   lint:
-    name: lint
     runs-on: ubuntu-latest
 
     steps:
@@ -29,117 +28,10 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version: ${{ env.GO_VERSION }}
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-
-      - name: Configure access to private Go modules
-        shell: bash
-        env:
-          GITHUB_PAT_TOKEN: ${{ secrets.GITHUB_PAT_TOKEN }}
-        run: |
-          if [ -n "${GITHUB_PAT_TOKEN}" ]; then
-            git config --global url."https://${GITHUB_PAT_TOKEN}:x-oauth-basic@github.com/".insteadOf "https://github.com/"
-          fi
-          go env -w GOPRIVATE=github.com/turtlepavlo/*
-
-      - name: Add Go bin to PATH
-        shell: bash
-        run: echo "$(go env GOPATH)/bin" >> "$GITHUB_PATH"
-
-      - name: Install golangci-lint
-        shell: bash
-        run: |
-          curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/HEAD/install.sh \
-            | sh -s -- -b "$(go env GOPATH)/bin" "${GOLANGCI_LINT_VERSION}"
-
-      - name: Install buf
-        shell: bash
-        run: |
-          mkdir -p "$HOME/.local/bin"
-          curl -fsSL "https://github.com/bufbuild/buf/releases/download/v${BUF_VERSION}/buf-Linux-x86_64" -o "$HOME/.local/bin/buf"
-          chmod +x "$HOME/.local/bin/buf"
-          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
-
-      - name: Run Go linters
-        shell: bash
-        run: |
-          set -euo pipefail
-
-          for service in event-service event-booking event-searching sso stripe-integration; do
-            echo "Linting ${service}"
-            cd "${service}"
-            golangci-lint run ./...
-            cd - >/dev/null
-          done
-
-      - name: Run proto format and lint
-        shell: bash
-        run: |
-          set -euo pipefail
-
-          cd proto
-          make tools
-          buf format --diff --exit-code
-          buf lint
-
-  vulnerability:
-    name: vulnerability
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Setup Go
-        uses: actions/setup-go@v5
-        with:
-          go-version: ${{ env.GO_VERSION }}
-
-      - name: Configure access to private Go modules
-        shell: bash
-        env:
-          GITHUB_PAT_TOKEN: ${{ secrets.GITHUB_PAT_TOKEN }}
-        run: |
-          if [ -n "${GITHUB_PAT_TOKEN}" ]; then
-            git config --global url."https://${GITHUB_PAT_TOKEN}:x-oauth-basic@github.com/".insteadOf "https://github.com/"
-          fi
-          go env -w GOPRIVATE=github.com/turtlepavlo/*
-
-      - name: Add Go bin to PATH
-        shell: bash
-        run: echo "$(go env GOPATH)/bin" >> "$GITHUB_PATH"
-
-      - name: Install govulncheck
-        shell: bash
-        run: go install golang.org/x/vuln/cmd/govulncheck@latest
-
-      - name: Run vulnerability checks
-        shell: bash
-        run: |
-          set -euo pipefail
-
-          for service in event-service event-booking event-searching sso stripe-integration proto; do
-            echo "Checking vulnerabilities in ${service}"
-            cd "${service}"
-            govulncheck ./...
-            cd - >/dev/null
-          done
-
-  tests:
-    name: tests
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Setup Go
-        uses: actions/setup-go@v5
-        with:
-          go-version: ${{ env.GO_VERSION }}
+          cache: true
+          cache-dependency-path: |
+            **/go.sum
+            go.work.sum
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -148,26 +40,103 @@ jobs:
           cache: npm
           cache-dependency-path: client/package-lock.json
 
-      - name: Configure access to private Go modules
-        shell: bash
-        env:
-          GITHUB_PAT_TOKEN: ${{ secrets.GITHUB_PAT_TOKEN }}
-        run: |
-          if [ -n "${GITHUB_PAT_TOKEN}" ]; then
-            git config --global url."https://${GITHUB_PAT_TOKEN}:x-oauth-basic@github.com/".insteadOf "https://github.com/"
-          fi
-          go env -w GOPRIVATE=github.com/turtlepavlo/*
+      - name: Add Go bin to PATH
+        run: echo "$(go env GOPATH)/bin" >> "$GITHUB_PATH"
 
-      - name: Run Go tests
-        shell: bash
+      - name: Install golangci-lint
+        run: |
+          curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/HEAD/install.sh \
+            | sh -s -- -b "$(go env GOPATH)/bin" "${GOLANGCI_LINT_VERSION}"
+
+      - name: Install buf
+        run: |
+          mkdir -p "$HOME/.local/bin"
+          curl -fsSL "https://github.com/bufbuild/buf/releases/download/v${BUF_VERSION}/buf-Linux-x86_64" -o "$HOME/.local/bin/buf"
+          chmod +x "$HOME/.local/bin/buf"
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
+
+      - name: Run Go linters
         run: |
           set -euo pipefail
+          for service in event-service event-booking event-searching sso stripe-integration; do
+            echo "Linting ${service}"
+            (cd "${service}" && golangci-lint run ./...)
+          done
 
+      - name: Run proto format and lint
+        run: |
+          set -euo pipefail
+          cd proto
+          make tools
+          buf format --diff --exit-code
+          buf lint
+
+  vulnerability:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache: true
+          cache-dependency-path: |
+            **/go.sum
+            go.work.sum
+
+      - name: Add Go bin to PATH
+        run: echo "$(go env GOPATH)/bin" >> "$GITHUB_PATH"
+
+      - name: Install govulncheck
+        run: go install golang.org/x/vuln/cmd/govulncheck@latest
+
+      - name: Sync Go workspace
+        run: go work sync
+
+      - name: Run vulnerability checks
+        run: |
+          set -euo pipefail
+          for service in event-service event-booking event-searching sso stripe-integration proto; do
+            echo "Checking vulnerabilities in ${service}"
+            (cd "${service}" && govulncheck ./...)
+          done
+
+  tests:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache: true
+          cache-dependency-path: |
+            **/go.sum
+            go.work.sum
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: client/package-lock.json
+
+      - name: Sync Go workspace
+        run: go work sync
+
+      - name: Run Go tests
+        run: |
+          set -euo pipefail
           for service in event-service event-booking event-searching sso stripe-integration proto; do
             echo "Running tests in ${service}"
-            cd "${service}"
-            go test ./...
-            cd - >/dev/null
+            (cd "${service}" && go test ./...)
           done
 
       - name: Install client dependencies
@@ -179,7 +148,6 @@ jobs:
         run: npm run build
 
   deploy:
-    name: deploy
     if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
     needs:
       - lint
@@ -195,12 +163,10 @@ jobs:
         uses: docker/setup-buildx-action@v3
 
       - name: Build service images
-        shell: bash
         env:
           GITHUB_PAT_TOKEN: ${{ secrets.GITHUB_PAT_TOKEN }}
         run: |
           set -euo pipefail
-
           docker build --build-arg GITHUB_PAT_TOKEN="${GITHUB_PAT_TOKEN}" -t event-service:ci ./event-service
           docker build --build-arg GITHUB_PAT_TOKEN="${GITHUB_PAT_TOKEN}" -t event-booking:ci ./event-booking
           docker build --build-arg GITHUB_PAT_TOKEN="${GITHUB_PAT_TOKEN}" -t event-searching:ci ./event-searching
