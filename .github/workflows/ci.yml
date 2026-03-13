@@ -13,7 +13,7 @@ permissions:
 env:
   NODE_VERSION: "22"
   BUF_VERSION: "1.66.1"
-  GOLANGCI_LINT_VERSION: "v1.64.8"
+  GOLANGCI_LINT_VERSION: "v2.11.3"
 
 jobs:
   lint:
