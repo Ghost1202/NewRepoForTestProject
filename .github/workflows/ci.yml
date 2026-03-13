@@ -33,7 +33,7 @@ jobs:
             go.work.sum
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
@@ -95,10 +95,14 @@ jobs:
       - name: Run vulnerability checks
         run: |
           set -euo pipefail
+          mkdir -p artifacts
           for service in event-service event-booking event-searching sso stripe-integration proto; do
             echo "Checking vulnerabilities in ${service}"
-            (cd "${service}" && govulncheck ./...)
+            (cd "${service}" && govulncheck -format sarif ./... > "../artifacts/${service}.sarif")
           done
+
+      - name: Show generated reports
+        run: ls -la artifacts
 
   tests:
     runs-on: ubuntu-latest
@@ -117,7 +121,7 @@ jobs:
             go.work.sum
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
@@ -149,7 +153,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
