@@ -1,0 +1,180 @@
+name: ci
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  NODE_VERSION: "22"
+  BUF_VERSION: "1.66.1"
+  GOLANGCI_LINT_VERSION: "v2.11.3"
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Setup Go
+        uses: actions/setup-go@v6
+        with:
+          go-version-file: go.work
+          cache: true
+          cache-dependency-path: |
+            **/go.sum
+            go.work.sum
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: client/package-lock.json
+
+      - name: Add Go bin to PATH
+        run: echo "$(go env GOPATH)/bin" >> "$GITHUB_PATH"
+
+      - name: Install golangci-lint
+        run: |
+          curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/HEAD/install.sh \
+            | sh -s -- -b "$(go env GOPATH)/bin" "${GOLANGCI_LINT_VERSION}"
+
+      - name: Install buf
+        run: |
+          mkdir -p "$HOME/.local/bin"
+          curl -fsSL "https://github.com/bufbuild/buf/releases/download/v${BUF_VERSION}/buf-Linux-x86_64" -o "$HOME/.local/bin/buf"
+          chmod +x "$HOME/.local/bin/buf"
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
+      - name: Run Go linters
+        run: |
+          set -uo pipefail
+          failed=0
+
+          for service in event-service event-booking event-searching sso stripe-integration; do
+            echo "::group::Linting ${service}"
+            if ! (cd "${service}" && golangci-lint run -v ./...); then
+              echo "Lint failed in ${service}"
+              failed=1
+            fi
+            echo "::endgroup::"
+          done
+
+          exit "${failed}"
+
+      - name: Run proto format and lint
+        run: |
+          set -euo pipefail
+          cd proto
+          make tools
+          buf format --diff --exit-code
+          buf lint
+
+  vulnerability:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Setup Go
+        uses: actions/setup-go@v6
+        with:
+          go-version-file: go.work
+          cache: true
+          cache-dependency-path: |
+            **/go.sum
+            go.work.sum
+
+      - name: Add Go bin to PATH
+        run: echo "$(go env GOPATH)/bin" >> "$GITHUB_PATH"
+
+      - name: Install govulncheck
+        run: go install golang.org/x/vuln/cmd/govulncheck@latest
+
+      - name: Run vulnerability checks
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts
+          for service in event-service event-booking event-searching sso stripe-integration proto; do
+            echo "Checking vulnerabilities in ${service}"
+            (cd "${service}" && govulncheck -format sarif ./... > "../artifacts/${service}.sarif")
+          done
+
+      - name: Show generated reports
+        run: ls -la artifacts
+
+  tests:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Setup Go
+        uses: actions/setup-go@v6
+        with:
+          go-version-file: go.work
+          cache: true
+          cache-dependency-path: |
+            **/go.sum
+            go.work.sum
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: client/package-lock.json
+
+      - name: Run Go tests
+        run: |
+          set -euo pipefail
+          for service in event-service event-booking event-searching sso stripe-integration proto; do
+            echo "Running tests in ${service}"
+            (cd "${service}" && go test ./...)
+          done
+
+      - name: Install client dependencies
+        working-directory: client
+        run: npm ci
+
+      - name: Build client
+        working-directory: client
+        run: npm run build
+
+  deploy:
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    needs:
+      - lint
+      - vulnerability
+      - tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build service images
+        env:
+          GITHUB_PAT_TOKEN: ${{ secrets.GITHUB_PAT_TOKEN }}
+        run: |
+          set -euo pipefail
+          docker build --build-arg GITHUB_PAT_TOKEN="${GITHUB_PAT_TOKEN}" -t event-service:ci ./event-service
+          docker build --build-arg GITHUB_PAT_TOKEN="${GITHUB_PAT_TOKEN}" -t event-booking:ci ./event-booking
+          docker build --build-arg GITHUB_PAT_TOKEN="${GITHUB_PAT_TOKEN}" -t event-searching:ci ./event-searching
+          docker build --build-arg GITHUB_PAT_TOKEN="${GITHUB_PAT_TOKEN}" -t stripe-integration:ci ./stripe-integration
+          docker build --build-arg GITHUB_PAT_TOKEN="${GITHUB_PAT_TOKEN}" -t sso-http:ci -f ./sso/Dockerfile.http ./sso
+          docker build --build-arg GITHUB_PAT_TOKEN="${GITHUB_PAT_TOKEN}" -t sso-grpc:ci -f ./sso/Dockerfile.grpc ./sso
+          docker build -t client:ci ./client

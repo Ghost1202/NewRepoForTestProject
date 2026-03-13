@@ -2,17 +2,16 @@ syntax = "proto3";
 
 package payment.v1;
 
+import "google/protobuf/duration.proto";
+import "google/protobuf/timestamp.proto";
+
 option go_package = "github.com/turtlepavlo/proto-contract/gen/go/payment/v1;paymentv1";
 
-import "google/protobuf/timestamp.proto";
-import "google/protobuf/duration.proto";
-import "google/protobuf/empty.proto";
-
 service PaymentService {
-  rpc CreatePayment (CreatePaymentRequest) returns (CreatePaymentResponse);
-  rpc TopupWallet (TopupWalletRequest) returns (TopupWalletResponse);
-  rpc CreateRefund (CreateRefundRequest) returns (google.protobuf.Empty);
-  rpc Waitlist (WaitlistRequest) returns (google.protobuf.Empty);
+  rpc CreatePayment(CreatePaymentRequest) returns (CreatePaymentResponse);
+  rpc TopupWallet(TopupWalletRequest) returns (TopupWalletResponse);
+  rpc CreateRefund(CreateRefundRequest) returns (CreateRefundResponse);
+  rpc Waitlist(WaitlistRequest) returns (WaitlistResponse);
 }
 
 message CreatePaymentRequest {
@@ -54,8 +53,12 @@ message CreateRefundRequest {
   google.protobuf.Duration token_ttl = 6;
 }
 
+message CreateRefundResponse {}
+
 message WaitlistRequest {
   int64 user_id = 1;
   int64 event_id = 2;
   string user_email = 3;
 }
+
+message WaitlistResponse {}

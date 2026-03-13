@@ -2,5 +2,15 @@ services:
   client:
     build:
       context: .
+      dockerfile: Dockerfile
+    container_name: client
+    restart: unless-stopped
     ports:
       - "5173:80"
+    networks:
+      - infra_shared
+
+networks:
+  infra_shared:
+    external: true
+    name: infra_shared

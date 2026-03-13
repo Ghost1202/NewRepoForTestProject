@@ -1,5 +1,3 @@
-version: '3.8'
-
 include:
-  - path: ./kafka/docker-compose.yml
+  - path: ./kafka/docker-compose.analytics.yml
   - path: ./metrics/docker-compose.yml

@@ -1,0 +1,100 @@
+version: "3"
+
+vars:
+  NETWORK: infra_shared
+  ROOT_COMPOSE: docker-compose.yml
+  METRICS_COMPOSE: metrics/docker-compose.yml
+  ANALYTICS_COMPOSE: kafka/docker-compose.analytics.yml
+
+tasks:
+  network:
+    desc: Create shared infrastructure network if it does not exist
+    cmds:
+      - docker network inspect {{.NETWORK}} >/dev/null 2>&1 || docker network create {{.NETWORK}}
+
+  validate:
+    desc: Validate all infrastructure compose files
+    deps: [network]
+    cmds:
+      - docker compose -f {{.ROOT_COMPOSE}} config >/dev/null
+      - docker compose -f {{.METRICS_COMPOSE}} config >/dev/null
+      - docker compose -f {{.ANALYTICS_COMPOSE}} config >/dev/null
+
+  up:
+    desc: Start full infrastructure stack
+    deps: [network]
+    cmds:
+      - docker compose -f {{.ROOT_COMPOSE}} up -d
+
+  down:
+    desc: Stop full infrastructure stack
+    cmds:
+      - docker compose -f {{.ROOT_COMPOSE}} down
+
+  restart:
+    desc: Restart full infrastructure stack
+    cmds:
+      - task: down
+      - task: up
+
+  ps:
+    desc: Show infrastructure containers
+    cmds:
+      - docker compose -f {{.ROOT_COMPOSE}} ps
+
+  logs:
+    desc: Show full infrastructure logs
+    cmds:
+      - docker compose -f {{.ROOT_COMPOSE}} logs -f --tail=200
+
+  metrics:up:
+    desc: Start metrics stack
+    deps: [network]
+    cmds:
+      - docker compose -f {{.METRICS_COMPOSE}} up -d
+
+  metrics:down:
+    desc: Stop metrics stack
+    cmds:
+      - docker compose -f {{.METRICS_COMPOSE}} down
+
+  metrics:logs:
+    desc: Show metrics stack logs
+    cmds:
+      - docker compose -f {{.METRICS_COMPOSE}} logs -f --tail=200
+
+  analytics:up:
+    desc: Start analytics stack
+    deps: [network]
+    cmds:
+      - docker compose -f {{.ANALYTICS_COMPOSE}} up -d
+
+  analytics:down:
+    desc: Stop analytics stack
+    cmds:
+      - docker compose -f {{.ANALYTICS_COMPOSE}} down
+
+  analytics:logs:
+    desc: Show analytics stack logs
+    cmds:
+      - docker compose -f {{.ANALYTICS_COMPOSE}} logs -f --tail=200
+
+  alertmanager:logs:
+    desc: Show Alertmanager logs
+    cmds:
+      - docker compose -f {{.METRICS_COMPOSE}} logs -f --tail=200 alertmanager
+
+  prometheus:logs:
+    desc: Show Prometheus logs
+    cmds:
+      - docker compose -f {{.METRICS_COMPOSE}} logs -f --tail=200 prometheus
+
+  grafana:logs:
+    desc: Show Grafana logs
+    cmds:
+      - docker compose -f {{.METRICS_COMPOSE}} logs -f --tail=200 grafana
+
+  kafka:logs:
+    desc: Show Kafka stack logs
+    cmds:
+      - docker compose -f {{.ANALYTICS_COMPOSE}} logs -f --tail=200 kafka zookeeper kafka-connect

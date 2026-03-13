@@ -1,0 +1,39 @@
+version: "3"
+
+tasks:
+  tools:
+    desc: Install Go protobuf generators
+    cmds:
+      - go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.36.11
+      - go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.5.1
+
+  fmt:
+    desc: Format proto files
+    cmds:
+      - buf format -w
+
+  lint:
+    desc: Lint proto files
+    cmds:
+      - buf lint
+
+  clean:
+    desc: Remove generated Go contracts
+    cmds:
+      - find gen/go -type f \( -name '*.pb.go' -o -name '*_grpc.pb.go' \) -delete || true
+
+  generate:
+    desc: Generate Go protobuf and gRPC code
+    cmds:
+      - mkdir -p gen/go
+      - buf generate
+      - go mod tidy
+
+  contracts:
+    desc: Format, lint and generate contracts
+    deps:
+      - fmt
+      - lint
+      - clean
+    cmds:
+      - task: generate
