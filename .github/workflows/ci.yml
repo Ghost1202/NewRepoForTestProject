@@ -56,11 +56,19 @@ jobs:
 
       - name: Run Go linters
         run: |
-          set -euo pipefail
+          set -uo pipefail
+          failed=0
+
           for service in event-service event-booking event-searching sso stripe-integration; do
-            echo "Linting ${service}"
-            (cd "${service}" && golangci-lint run ./...)
+            echo "::group::Linting ${service}"
+            if ! (cd "${service}" && golangci-lint run -v ./...); then
+              echo "Lint failed in ${service}"
+              failed=1
+            fi
+            echo "::endgroup::"
           done
+
+          exit "${failed}"
 
       - name: Run proto format and lint
         run: |
