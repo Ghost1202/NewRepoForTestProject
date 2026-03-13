@@ -11,7 +11,6 @@ permissions:
   contents: read
 
 env:
-  GO_VERSION: "1.24.13"
   NODE_VERSION: "22"
   BUF_VERSION: "1.66.1"
   GOLANGCI_LINT_VERSION: "v1.64.8"
@@ -25,11 +24,11 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Setup Go
-          uses: actions/setup-go@v6
-          with:
-            go-version-file: go.work
-            cache: true
-            cache-dependency-path: |
+        uses: actions/setup-go@v6
+        with:
+          go-version-file: go.work
+          cache: true
+          cache-dependency-path: |
             **/go.sum
             go.work.sum
 
@@ -55,7 +54,6 @@ jobs:
           chmod +x "$HOME/.local/bin/buf"
           echo "$HOME/.local/bin" >> "$GITHUB_PATH"
 
-
       - name: Run Go linters
         run: |
           set -euo pipefail
@@ -80,11 +78,11 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Setup Go
-          uses: actions/setup-go@v6
-          with:
-            go-version-file: go.work
-            cache: true
-            cache-dependency-path: |
+        uses: actions/setup-go@v6
+        with:
+          go-version-file: go.work
+          cache: true
+          cache-dependency-path: |
             **/go.sum
             go.work.sum
 
@@ -110,11 +108,11 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Setup Go
-          uses: actions/setup-go@v6
-          with:
-            go-version-file: go.work
-            cache: true
-            cache-dependency-path: |
+        uses: actions/setup-go@v6
+        with:
+          go-version-file: go.work
+          cache: true
+          cache-dependency-path: |
             **/go.sum
             go.work.sum
 
